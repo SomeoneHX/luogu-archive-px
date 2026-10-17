@@ -453,12 +453,12 @@ function formatScore(s: number): string {
           </div>
         </Card>
 
-        <TabsList class="h-auto w-full flex-col items-stretch gap-0.5 bg-transparent p-0">
+        <TabsList class="h-auto w-full flex-col items-stretch">
           <TabsTrigger
             v-for="t in visibleTabs"
             :key="t.key"
             :value="t.key"
-            class="h-9 w-full flex-none justify-start rounded-md px-2.5 text-sm font-normal data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            class="h-9 justify-start"
           >
             {{ t.label }}
           </TabsTrigger>
@@ -474,7 +474,7 @@ function formatScore(s: number): string {
                   v-for="t in ACTIVITY_TABS"
                   :key="t.key"
                   :value="t.key"
-                  class="h-7 flex-none px-2.5 text-xs"
+                  class="flex-none text-xs"
                 >
                   {{ t.label }}
                 </TabsTrigger>

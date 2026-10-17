@@ -257,29 +257,14 @@ useHead(() => ({ title: `${displayName.value} - 插件广场` }))
     </Alert>
 
     <Tabs v-model="activeTab" class="gap-4">
-      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-border">
-        <TabsList class="h-auto gap-5 rounded-none bg-transparent p-0">
-          <TabsTrigger
-            value="article"
-            class="h-9 rounded-none border-b-2 border-transparent px-0.5 pb-2 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-          >
-            原文
-          </TabsTrigger>
-          <TabsTrigger
-            value="code"
-            class="h-9 rounded-none border-b-2 border-transparent px-0.5 pb-2 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-          >
-            代码
-          </TabsTrigger>
-          <TabsTrigger
-            value="analysis"
-            class="h-9 rounded-none border-b-2 border-transparent px-0.5 pb-2 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-          >
-            请求分析
-          </TabsTrigger>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <TabsList>
+          <TabsTrigger value="article">原文</TabsTrigger>
+          <TabsTrigger value="code">代码</TabsTrigger>
+          <TabsTrigger value="analysis">请求分析</TabsTrigger>
         </TabsList>
 
-        <div class="flex items-center gap-3 pb-2 text-sm">
+        <div class="flex items-center gap-3 text-sm">
           <NuxtLink
             v-if="article.version_count > 1"
             :to="`/article/${articleId}/history`"
@@ -394,12 +379,15 @@ useHead(() => ({ title: `${displayName.value} - 插件广场` }))
 
       <TabsContent value="analysis" class="mt-0">
         <div v-if="displayVersion" class="space-y-6">
-          <div class="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
-            <div class="flex flex-col gap-2 bg-card p-4">
+          <div
+            class="grid gap-px overflow-hidden rounded-lg border border-border bg-border"
+            :class="displayVersion.admin_request_level !== null ? 'sm:grid-cols-2' : ''"
+          >
+            <div class="flex flex-col items-start gap-2 bg-card px-4 py-3">
               <span class="text-xs text-muted-foreground">用户提交等级</span>
               <PluginRequestLevelBadge :level="displayVersion.user_request_level" />
             </div>
-            <div v-if="displayVersion.admin_request_level !== null" class="flex flex-col gap-2 bg-card p-4">
+            <div v-if="displayVersion.admin_request_level !== null" class="flex flex-col items-start gap-2 bg-card px-4 py-3">
               <span class="text-xs text-muted-foreground">管理员更改等级</span>
               <PluginRequestLevelBadge :level="displayVersion.admin_request_level" />
             </div>

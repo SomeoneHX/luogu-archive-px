@@ -189,12 +189,12 @@ function announcementDate(value: string) {
         </p>
 
         <Tabs :model-value="selectedType" class="mt-5" @update:model-value="setType($event as JumpType)">
-          <TabsList class="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
+          <TabsList class="h-9 flex-wrap">
             <TabsTrigger
               v-for="item in jumpTypes"
               :key="item.key"
               :value="item.key"
-              class="h-9 flex-none gap-1.5 rounded-md border border-border px-3 text-sm data-[state=active]:border-primary/40 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+              class="flex-none gap-1.5"
             >
               <component :is="item.icon" class="size-4" />
               {{ item.label }}
