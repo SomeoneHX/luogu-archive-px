@@ -146,6 +146,22 @@ const collapsed = useCookie<boolean>('la_sidebar_collapsed', {
 })
 const mobileOpen = ref(false)
 
+// 用显式判断替代 active-class：active-class 会和基础 text-muted-foreground
+// 同时命中，最终颜色取决于生成 CSS 的顺序，结果不可控。
+function isActive(to: string) {
+  return to === '/' ? route.path === '/' : route.path.startsWith(to)
+}
+
+function navClass(to: string, collapsedMode = false) {
+  return [
+    'flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
+    collapsedMode ? 'justify-center px-0' : '',
+    isActive(to)
+      ? 'bg-accent font-medium text-foreground'
+      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+  ]
+}
+
 watch(() => route.fullPath, () => { mobileOpen.value = false })
 </script>
 
@@ -170,8 +186,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
-              class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              active-class="bg-accent text-foreground"
+              :class="navClass(item.to)"
             >
               <component :is="item.icon" class="size-[18px] shrink-0" />
               <span>{{ item.label }}</span>
@@ -232,9 +247,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
             <TooltipTrigger as-child>
               <NuxtLink
                 :to="item.to"
-                class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                :class="collapsed ? 'justify-center px-0' : ''"
-                active-class="bg-accent text-foreground"
+                :class="navClass(item.to, collapsed)"
               >
                 <component :is="item.icon" class="size-[18px] shrink-0" />
                 <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
@@ -310,12 +323,12 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
     </aside>
 
     <div class="flex min-h-dvh flex-col transition-[padding] duration-200 ease-out" :class="collapsed ? 'lg:pl-16' : 'lg:pl-60'">
-      <main class="container flex-1 py-8">
+      <main class="mx-auto w-full max-w-[1180px] flex-1 px-[var(--page-gutter)] py-8">
         <slot />
       </main>
 
       <footer class="border-t border-border bg-card">
-        <div class="container flex flex-col gap-6 py-8 sm:flex-row sm:items-start sm:justify-between">
+        <div class="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-[var(--page-gutter)] py-8 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0">
             <div class="flex flex-wrap items-baseline gap-3">
               <span class="text-base font-semibold text-foreground">洛谷档案馆</span>
@@ -328,9 +341,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
           <div class="shrink-0 sm:text-right">
             <p class="mb-2 text-sm font-medium text-foreground">站点相关</p>
             <div class="flex flex-col gap-1.5 text-sm text-muted-foreground sm:items-end">
-              <a href="https://github.com/px-poxiao/luogu-archive" target="_blank" rel="noopener noreferrer" class="transition-colors hover:text-foreground">GitHub</a>
-              <a href="https://qm.qq.com/q/b4D2ZhhtN6" target="_blank" rel="noopener noreferrer" class="transition-colors hover:text-foreground">QQ群（936024195）</a>
-              <NuxtLink to="/takedown" class="transition-colors hover:text-foreground">侵权投诉 / 内容删除</NuxtLink>
+              <a href="https://github.com/px-poxiao/luogu-archive" target="_blank" rel="noopener noreferrer" class="text-muted-foreground transition-colors hover:text-foreground">GitHub</a>
+              <a href="https://qm.qq.com/q/b4D2ZhhtN6" target="_blank" rel="noopener noreferrer" class="text-muted-foreground transition-colors hover:text-foreground">QQ群（936024195）</a>
+              <NuxtLink to="/takedown" class="text-muted-foreground transition-colors hover:text-foreground">侵权投诉 / 内容删除</NuxtLink>
             </div>
           </div>
         </div>

@@ -4,6 +4,302 @@
  * 这里为 .lg-content 全部显式定义，不依赖 UA 默认值。
  */
 
+@layer components {
+/* 洛谷用户名显示 */
+.lg-name[data-color="Gray"] { color: var(--lg-gray); }
+
+.lg-name[data-color="Blue"] { color: var(--lg-blue); }
+
+.lg-name[data-color="Green"] { color: var(--lg-green); }
+
+.lg-name[data-color="Orange"] { color: var(--lg-orange); }
+
+.lg-name[data-color="Yellow"] { color: var(--lg-yellow); }
+
+.lg-name[data-color="Red"] { color: var(--lg-red); }
+
+.lg-name[data-color="Purple"] { color: var(--lg-purple); }
+
+.lg-name[data-color="Cyan"] { color: var(--lg-cyan); }
+
+.lg-name[data-color="Black"] { color: var(--lg-black-name); font-weight: 700; }
+
+.lg-name[data-color="Cheater"] { color: var(--lg-cheater); }
+
+.lg-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-left: 4px;
+  color: #fff;
+  background: var(--lg-gray);     /* 默认色（无 data-color 时）*/
+  border: 1px solid transparent;
+}
+
+.lg-badge[data-color="Gray"]    { background: var(--lg-gray); }
+
+.lg-badge[data-color="Blue"]    { background: var(--lg-blue); }
+
+.lg-badge[data-color="Green"]   { background: var(--lg-green); }
+
+.lg-badge[data-color="Orange"]  { background: var(--lg-orange); }
+
+.lg-badge[data-color="Yellow"]  { background: var(--lg-yellow); color: #333; }
+
+.lg-badge[data-color="Red"]     { background: var(--lg-red); }
+
+.lg-badge[data-color="Purple"]  { background: var(--lg-purple); }
+
+.lg-badge[data-color="Cyan"]    { background: var(--lg-cyan); }
+
+.lg-badge[data-color="Black"]   { background: var(--lg-black); }
+
+.lg-badge[data-color="Cheater"] { background: var(--lg-cheater-tag); }
+
+/* 提及链接统一样式 */
+.lg-user-mention {
+  font-weight: 500;
+}
+
+/* Markdown 渲染区 */
+.lg-content {
+  word-wrap: break-word;
+}
+
+.lg-content pre {
+  background: var(--hover);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  position: relative;
+}
+
+/* 代码框一键复制按钮（由 useCopyCode 注入） */
+.code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.lg-content pre:hover .code-copy-btn,
+.code-copy-btn:focus { opacity: 1; }
+
+.code-copy-btn:hover { color: var(--link); border-color: var(--link); }
+
+.code-copy-btn.ok { color: var(--lg-green); border-color: var(--lg-green); opacity: 1; }
+
+.code-copy-btn.err { color: var(--lg-red); border-color: var(--lg-red); opacity: 1; }
+
+.lg-content blockquote {
+  border-left: 4px solid var(--border);
+  margin: 0;
+  padding: 4px 12px;
+  color: var(--text-muted);
+}
+
+.lg-content .lg-quote-reply {
+  border-left-color: var(--link);
+  background: var(--hover);
+  border-radius: 4px;
+}
+
+.lg-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.lg-content .lg-bilibili {
+  display: block;
+  width: min(100%, 860px);
+  margin: 14px 0;
+}
+
+.lg-content .lg-bilibili-frame {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--hover);
+}
+
+.lg-content .lg-bilibili iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.lg-content .lg-bilibili-caption {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lg-content table {
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.lg-content table td,
+.lg-content table th {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
+
+/* Tuack 表格使用简洁的横线；合并单元格沿用浏览器的行列跨度布局。 */
+.lg-table-scroll { max-width: 100%; overflow-x: auto; margin: 12px 0; }
+
+.lg-table-scroll > table { margin-top: 0; margin-bottom: 0; }
+
+.lg-content .lg-cute-table { width: 100%; }
+
+.lg-content .lg-cute-table td,
+.lg-content .lg-cute-table th {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.lg-content .lg-cute-table thead { border-top: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); }
+
+.lg-content .lg-cute-table tbody { border-bottom: 2px solid var(--text-muted); }
+
+.lg-content .lg-task-list { list-style: none; }
+
+.lg-task-checkbox { margin: 0 6px 0 0; accent-color: var(--link); vertical-align: middle; }
+
+/* 行号是视觉注释，不进入 code.textContent，保持复制结果为完整原始代码。 */
+.lg-content pre.lg-code-block { padding-left: 0; padding-right: 0; }
+
+.lg-code-line { display: inline-block; box-sizing: border-box; min-width: 100%; padding: 0 12px; }
+
+.lg-code-line.is-highlighted { background: color-mix(in srgb, var(--link) 14%, transparent); }
+
+.has-line-numbers .lg-code-line::before {
+  content: attr(data-line);
+  display: inline-block;
+  width: 3.5em;
+  padding-right: 1em;
+  box-sizing: border-box;
+  color: var(--text-muted);
+  text-align: right;
+  user-select: none;
+}
+
+/* 洛谷折叠框 / 告示框 —— :::info / :::warning / :::success / :::spoiler */
+.lg-callout {
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-muted);
+  border-radius: 6px;
+  padding: 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.lg-callout > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 10px 14px;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-callout > summary::-webkit-details-marker { display: none; }
+
+.lg-callout > summary::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.lg-callout[open] > summary::before { transform: rotate(90deg); }
+
+.lg-callout > :not(summary) {
+  padding: 0 16px;
+}
+
+.lg-callout > :last-child { padding-bottom: 12px; }
+
+.lg-callout > summary + * { padding-top: 8px; }
+
+/* 四种语义色 */
+.lg-callout-info {
+  border-left-color: var(--link);
+}
+
+.lg-callout-info > summary { background: color-mix(in srgb, var(--link) 10%, transparent); }
+
+.lg-callout-warning {
+  border-left-color: var(--lg-orange);
+}
+
+.lg-callout-warning > summary { background: color-mix(in srgb, var(--lg-orange) 12%, transparent); }
+
+.lg-callout-success {
+  border-left-color: var(--lg-green);
+}
+
+.lg-callout-success > summary { background: color-mix(in srgb, var(--lg-green) 12%, transparent); }
+
+.lg-callout-spoiler {
+  border-left-color: var(--lg-purple);
+}
+
+.lg-callout-spoiler > summary { background: color-mix(in srgb, var(--lg-purple) 10%, transparent); }
+
+.lg-callout-error {
+  border-left-color: var(--lg-red);
+}
+
+.lg-callout-error > summary { background: color-mix(in srgb, var(--lg-red) 12%, transparent); }
+
+.lg-align { margin: 10px 0; }
+
+.lg-align[style*="text-align:center"] table { margin-left: auto; margin-right: auto; }
+
+.lg-align[style*="text-align:right"] table { margin-left: auto; }
+
+/* 题记 / 引文：右对齐 + 斜体 + 署名破折号 */
+.lg-epigraph {
+  margin: 14px 0;
+  padding: 4px 0;
+  text-align: right;
+  font-style: italic;
+  color: var(--text-muted);
+  border-right: 3px solid var(--border);
+  padding-right: 14px;
+}
+
+.lg-epigraph-source {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  color: var(--text);
+}
+
+.lg-epigraph p { margin: 0; }
+
 .lg-content {
   font-size: 16px;
   line-height: 1.8;
@@ -208,4 +504,5 @@
 
 .lg-content tbody tr:nth-child(even) {
   background: color-mix(in oklch, var(--muted) 45%, transparent);
+}
 }

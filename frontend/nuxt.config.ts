@@ -47,10 +47,20 @@ export default defineNuxtConfig({
   css: [
     '~/assets/css/tailwind.css',
     'katex/dist/katex.min.css',
-    '~/assets/css/base.css',
+    '~/assets/css/tokens.css',
     '~/assets/css/content.css',
+    '~/assets/css/legacy.css',
   ],
   routeRules: {
+    // 只在 dev 生效：浏览器端请求 /api/** 由 Nitro 转发到线上，避免 CORS。
+    // 生产环境由 nginx 同源反代 /api/，不需要这条规则。
+    ...(process.env.NODE_ENV !== 'production'
+      ? {
+          '/api/**': {
+            proxy: `${process.env.NUXT_DEV_API_PROXY || 'https://luogu.ac.cn'}/api/**`,
+          },
+        }
+      : {}),
     '/favicon.png': {
       headers: {
         'cache-control': 'public, max-age=604800, stale-while-revalidate=86400',
