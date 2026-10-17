@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Plus, Tag, Wrench } from '@lucide/vue'
+import { ArrowRight, ChevronDown, Plus, Tag, Wrench } from '@lucide/vue'
 import type { PluginTag } from '~/types/plugin'
 
 const api = useApi()
@@ -53,6 +53,8 @@ const activeTagName = computed(() => {
 })
 
 const hasFilters = computed(() => Object.values(filters).some(Boolean))
+// 窄屏下五个下拉会把首屏占满，默认收起，桌面端始终展开。
+const filtersOpen = ref(false)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 function displaySummary(value: unknown) {
@@ -176,7 +178,23 @@ useHead({ title: '插件广场 - 洛谷档案馆' })
             </Button>
           </div>
 
-          <div class="mt-4 space-y-3 border-t border-border pt-4">
+          <button
+            type="button"
+            class="mt-4 flex w-full items-center justify-between border-t border-border pt-4 text-xs font-medium text-muted-foreground lg:hidden"
+            :aria-expanded="filtersOpen"
+            @click="filtersOpen = !filtersOpen"
+          >
+            详细筛选
+            <ChevronDown
+              class="size-4 transition-transform"
+              :class="filtersOpen ? 'rotate-180' : ''"
+            />
+          </button>
+
+          <div
+            class="mt-3 space-y-3 lg:mt-4 lg:border-t lg:border-border lg:pt-4"
+            :class="filtersOpen ? '' : 'hidden lg:block'"
+          >
             <div class="space-y-1.5">
               <Label class="text-xs font-normal text-muted-foreground">请求等级</Label>
               <Select v-model="requestLevelModel">
@@ -283,7 +301,7 @@ useHead({ title: '插件广场 - 洛谷档案馆' })
         </div>
 
         <div v-if="loading" class="space-y-3">
-          <div v-for="i in 5" :key="i" class="space-y-2.5 rounded-lg border border-border bg-card p-4">
+          <div v-for="i in 5" :key="i" class="space-y-2.5 rounded-xl border border-border bg-card p-4">
             <Skeleton class="h-5 w-2/5" />
             <Skeleton class="h-4 w-4/5" />
             <Skeleton class="h-3 w-3/5" />
@@ -294,58 +312,74 @@ useHead({ title: '插件广场 - 洛谷档案馆' })
           <p class="text-sm text-destructive">{{ errorText }}</p>
         </Card>
 
-        <div v-else-if="rows.length" class="space-y-3">
+        <div v-else-if="rows.length" class="space-y-2.5">
           <article
             v-for="row in rows"
             :key="row.article_id"
-            class="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
+            class="group rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm"
           >
-            <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start justify-between gap-3">
               <NuxtLink
                 :to="`/plugin/${row.article_id}`"
-                class="min-w-0 break-words text-base font-medium text-foreground transition-colors hover:text-primary"
+                class="min-w-0 text-[15px] font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary"
               >
                 {{ row.article_title }}
               </NuxtLink>
               <PluginRequestLevelBadge :level="row.final_request_level" compact />
             </div>
 
-            <p v-if="row.summary" class="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            <p v-if="row.summary" class="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
               {{ displaySummary(row.summary) }}
             </p>
 
-            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-              <span v-if="row.article_author" class="flex min-w-0 items-center gap-2">
-                <UserAvatar :user="row.article_author" size="lg" />
-                <LuoguUserName
-                  :user="row.article_author"
-                  show-badge
-                  truncate
-                  class="max-w-[10rem]"
-                />
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+              <span class="flex min-w-0 items-center gap-2.5">
+                <span v-if="row.article_author" class="flex min-w-0 items-center gap-1.5">
+                  <UserAvatar :user="row.article_author" size="md" />
+                  <LuoguUserName
+                    :user="row.article_author"
+                    show-badge
+                    truncate
+                    class="max-w-[9rem]"
+                  />
+                </span>
+                <span class="inline-flex shrink-0 items-center gap-1">
+                  <Tag class="size-3" />
+                  {{ runtimeMode(row.runtime_mode) }}
+                </span>
               </span>
-              <span class="inline-flex items-center gap-1">
-                <Tag class="size-3" />
-                {{ runtimeMode(row.runtime_mode) }}
+              <span class="flex shrink-0 items-center gap-2 tabular-nums">
+                <span>{{ format(row.updated_at, 'YYYY-MM-DD') }}</span>
+                <span aria-hidden="true" class="text-border">·</span>
+                <span>30 天 {{ row.usage_30d || 0 }} 次</span>
               </span>
-              <span>更新于 {{ format(row.updated_at) }}</span>
-              <span>近 30 天 {{ row.usage_30d || 0 }} 次有效使用</span>
             </div>
 
-            <footer class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+            <footer class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
               <div class="flex flex-wrap gap-1.5">
-                <Badge v-if="row.is_official" class="h-5 bg-[var(--lg-blue)] px-1.5 font-normal text-white">官方插件</Badge>
-                <Badge v-if="row.is_recommended" class="h-5 bg-[var(--lg-yellow)] px-1.5 font-normal text-[#332800]">推荐插件</Badge>
+                <Badge
+                  v-if="row.is_official"
+                  class="h-5 border-transparent bg-[var(--lg-blue)]/12 px-1.5 font-normal text-[var(--lg-blue)]"
+                >
+                  官方
+                </Badge>
+                <Badge
+                  v-if="row.is_recommended"
+                  class="h-5 border-transparent bg-[var(--lg-yellow)]/20 px-1.5 font-normal text-[#8a6d00] dark:text-[var(--lg-yellow)]"
+                >
+                  推荐
+                </Badge>
                 <Badge v-for="tag in row.tags" :key="tag.id" variant="outline" class="h-5 px-1.5 font-normal">
                   {{ tag.name }}
                 </Badge>
               </div>
-              <Button variant="ghost" size="sm" class="-mr-2 shrink-0" as-child>
-                <NuxtLink :to="`/plugin/${row.article_id}`">
-                  查看插件
-                  <ArrowRight class="size-3.5" />
-                </NuxtLink>
-              </Button>
+              <NuxtLink
+                :to="`/plugin/${row.article_id}`"
+                class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                查看插件
+                <ArrowRight class="size-3" />
+              </NuxtLink>
             </footer>
           </article>
         </div>
