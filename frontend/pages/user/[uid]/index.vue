@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChartNoAxesColumn, Check, Copy, ExternalLink, Loader2 } from '@lucide/vue'
+import { ArrowUpRight, ChartNoAxesColumn, Check, Copy, ExternalLink, Loader2 } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApi()
@@ -485,21 +485,29 @@ function formatScore(s: number): string {
             </span>
           </div>
 
-          <div v-if="activityInitialPending" class="mt-4 space-y-3">
-            <Skeleton v-for="i in 5" :key="i" class="h-20 rounded-lg" />
+          <div v-if="activityInitialPending" class="mt-4 space-y-2.5">
+            <Skeleton v-for="i in 5" :key="i" class="h-20 rounded-xl" />
           </div>
 
-          <ul v-else-if="activity && activity.length" class="mt-4 space-y-3">
+          <ul v-else-if="activity && activity.length" class="mt-4 space-y-2.5">
             <li
               v-for="(a, idx) in activity"
               :key="idx"
-              class="rounded-lg border border-border bg-card p-4"
+              class="group rounded-xl border border-border bg-card p-4"
             >
-              <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="secondary" class="h-5 px-1.5 font-normal">
-                  {{ KIND_LABEL[a.kind] || a.kind }}
-                </Badge>
-                <time class="tabular-nums">{{ smart(a.time) }}</time>
+              <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <div class="flex min-w-0 items-center gap-2">
+                  <Badge variant="secondary" class="h-5 px-1.5 font-normal">
+                    {{ KIND_LABEL[a.kind] || a.kind }}
+                  </Badge>
+                  <time class="tabular-nums">{{ smart(a.time) }}</time>
+                </div>
+                <span
+                  v-if="a.kind === 'discussion' && a.discussion_reply_count != null"
+                  class="shrink-0 tabular-nums"
+                >
+                  回复 {{ a.discussion_reply_count }}
+                </span>
               </div>
 
               <template v-if="a.kind === 'feed'">
@@ -507,7 +515,7 @@ function formatScore(s: number): string {
                   class="lg-content mt-2"
                   v-html="feedHtml(a.feed_content || '', a.feed_merged_suffix_md, a.feed_merged_link_md || [], a.feed_merged_image_md || [])"
                 />
-                <div class="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                <div class="mt-2.5 flex items-center gap-3 border-t border-border pt-2.5 text-xs text-muted-foreground">
                   <NuxtLink :to="`/feed/${a.feed_id}`" class="tabular-nums transition-colors hover:text-foreground">
                     #{{ a.feed_id }}
                   </NuxtLink>
@@ -521,45 +529,44 @@ function formatScore(s: number): string {
               <template v-else-if="a.kind === 'article'">
                 <NuxtLink
                   :to="`/article/${a.article_id}`"
-                  class="mt-2 block truncate text-sm text-primary hover:underline"
+                  class="mt-1.5 flex items-center justify-between gap-3 text-[15px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-primary"
                 >
-                  {{ a.article_title || a.article_id }}
+                  <span class="truncate">{{ a.article_title || a.article_id }}</span>
+                  <ArrowUpRight class="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                 </NuxtLink>
               </template>
 
               <template v-else-if="a.kind === 'paste'">
                 <NuxtLink
                   :to="`/paste/${a.paste_id}`"
-                  class="mt-2 block truncate text-sm text-primary hover:underline"
+                  class="mt-1.5 flex items-center justify-between gap-3 text-[15px] font-semibold leading-snug tracking-tight text-foreground transition-colors hover:text-primary"
                 >
-                  剪贴板 {{ a.paste_id }}
+                  <span class="truncate">剪贴板 <span class="font-mono">{{ a.paste_id }}</span></span>
+                  <ArrowUpRight class="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                 </NuxtLink>
               </template>
 
               <template v-else-if="a.kind === 'discussion'">
-                <h3 class="mt-2 truncate text-sm font-medium text-foreground">
+                <h3 class="mt-1.5 truncate text-[15px] font-semibold leading-snug tracking-tight text-foreground">
                   <NuxtLink :to="`/discuss/${a.discussion_id}`" class="transition-colors hover:text-primary">
                     {{ a.discussion_title || `讨论 ${a.discussion_id}` }}
                   </NuxtLink>
                 </h3>
-                <p v-if="a.discussion_excerpt" class="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                <p v-if="a.discussion_excerpt" class="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
                   {{ a.discussion_excerpt }}
-                </p>
-                <p v-if="a.discussion_reply_count != null" class="mt-1.5 text-xs text-muted-foreground">
-                  回复 {{ a.discussion_reply_count }}
                 </p>
               </template>
 
               <template v-else-if="a.kind === 'discussion_reply'">
-                <p class="mt-2 text-xs text-muted-foreground">
+                <p class="mt-1.5 text-[13px] text-muted-foreground">
                   在讨论
                   <NuxtLink
                     :to="a.discussion_reply_page ? `/discuss/${a.discussion_id}?page=${a.discussion_reply_page}#reply-${a.discussion_reply_id}` : `/discuss/${a.discussion_id}`"
-                    class="text-primary hover:underline"
+                    class="font-medium text-foreground transition-colors hover:text-primary"
                   >《{{ a.discussion_title || `讨论 ${a.discussion_id}` }}》</NuxtLink>
                   回复：
                 </p>
-                <blockquote class="mt-2 border-l-2 border-border pl-3 text-sm leading-relaxed text-muted-foreground">
+                <blockquote class="mt-2 border-l-2 border-border pl-3 text-[13px] leading-relaxed text-muted-foreground">
                   {{ a.discussion_reply_excerpt || '（暂无回复摘要）' }}
                 </blockquote>
               </template>
