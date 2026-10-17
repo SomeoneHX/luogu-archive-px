@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Check, Copy, ExternalLink, History } from '@lucide/vue'
+
 const { format } = useTime()
 
 const route = useRoute()
@@ -32,6 +34,23 @@ const crawledAtText = computed(() =>
   data.value ? format(data.value.crawled_at) : '',
 )
 
+// 洛谷用户名配色直接映射到调色板变量，省掉每种颜色一条 CSS。
+const AVATAR_COLORS: Record<string, string> = {
+  Gray: 'var(--lg-gray)',
+  Blue: 'var(--lg-blue)',
+  Green: 'var(--lg-green)',
+  Orange: 'var(--lg-orange)',
+  Yellow: 'var(--lg-yellow)',
+  Red: 'var(--lg-red)',
+  Purple: 'var(--lg-purple)',
+  Cyan: 'var(--lg-cyan)',
+  Black: 'var(--lg-black)',
+  Cheater: 'var(--lg-cheater-tag)',
+}
+const avatarColor = computed(() =>
+  AVATAR_COLORS[data.value?.author?.color as string] || 'var(--lg-gray)',
+)
+
 async function copyOriginalMarkdown() {
   if (!data.value?.content_md) return
   await navigator.clipboard.writeText(data.value.content_md)
@@ -41,208 +60,97 @@ async function copyOriginalMarkdown() {
 </script>
 
 <template>
-  <LoadingPanel v-if="pending" title="正在加载文章" text="页面已经打开，正在读取这篇文章的归档内容…" />
+  <div class="mx-auto w-full max-w-3xl">
+    <div v-if="pending" class="space-y-5 py-2">
+      <Skeleton class="h-8 w-3/5" />
+      <div class="flex items-center gap-3">
+        <Skeleton class="size-9 rounded-full" />
+        <Skeleton class="h-4 w-32" />
+      </div>
+      <div class="space-y-2.5 pt-2">
+        <Skeleton v-for="i in 8" :key="i" class="h-4" :class="i % 4 === 0 ? 'w-2/3' : 'w-full'" />
+      </div>
+    </div>
 
-  <div v-else-if="error" class="error-box">
-    <h2>{{ error.data?.message || '加载失败' }}</h2>
-    <p v-if="error.statusCode === 404">
-      如果本站从未爬取过这篇文章，刚才已触发一次爬取，稍等片刻刷新即可。
-    </p>
-  </div>
+    <Card v-else-if="error" class="gap-0 py-0">
+      <CardContent class="flex flex-col items-center px-6 py-12 text-center">
+        <h2 class="text-base font-semibold text-foreground">
+          {{ error.data?.message || '加载失败' }}
+        </h2>
+        <p v-if="error.statusCode === 404" class="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+          如果本站从未爬取过这篇文章，刚才已触发一次爬取，稍等片刻刷新即可。
+        </p>
+      </CardContent>
+    </Card>
 
-  <div v-else-if="data" class="article-wrap">
-    <!-- 顶部 Banner：背景色块 + 标题 + 作者行 -->
-    <header class="article-banner">
-      <h1 class="article-title">{{ data.title }}</h1>
-      <div class="article-meta">
-        <div class="author-block">
+    <template v-else-if="data">
+      <header class="border-b border-border pb-6">
+        <p class="text-xs font-medium tracking-wide text-muted-foreground">
+          文章归档
+        </p>
+        <h1 class="mt-2 text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
+          {{ data.title }}
+        </h1>
+
+        <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
           <NuxtLink
             v-if="data.author"
             :to="`/user/${data.author.uid}`"
-            class="author-link"
+            class="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
           >
-            <img
-              v-if="data.author.avatar"
-              :src="data.author.avatar"
-              alt=""
-              class="author-avatar"
-              loading="lazy"
-            >
-            <div
-              v-else
-              class="author-avatar avatar-fallback"
-              :data-color="data.author.color"
-            >{{ (data.author.name || '?').charAt(0).toUpperCase() }}</div>
+            <Avatar class="size-8">
+              <AvatarImage v-if="data.author.avatar" :src="data.author.avatar" :alt="data.author.name" />
+              <AvatarFallback
+                class="text-xs font-semibold text-white"
+                :style="{ backgroundColor: avatarColor }"
+              >
+                {{ (data.author.name || '?').charAt(0).toUpperCase() }}
+              </AvatarFallback>
+            </Avatar>
             <LuoguUserName :user="data.author" show-badge no-link />
           </NuxtLink>
-          <span v-else class="author-link">作者未收录</span>
-        </div>
+          <span v-else>作者未收录</span>
 
-        <div class="meta-right">
-          <a
-            :href="`https://www.luogu.com.cn/article/${id}`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="archive-action-button meta-action-btn"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M14 4h6v6M10 14L20 4M20 14v6H4V4h6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>查看原文</span>
-          </a>
-          <button
-            type="button"
-            class="archive-action-button meta-copy-btn"
-            @click="copyOriginalMarkdown"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M8 8h10v12H8zM6 16H4V4h12v2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>{{ copiedOriginal ? '已复制' : '复制原文' }}</span>
-          </button>
-          <span class="meta-item">上次更新 · {{ crawledAtText }}</span>
+          <Separator orientation="vertical" class="h-4" />
+
+          <span class="text-xs">上次更新 · {{ crawledAtText }}</span>
+
           <NuxtLink
             v-if="data.version_count > 1"
             :to="`/article/${id}/history`"
-            class="meta-item link"
-          >{{ data.version_count }} 个历史版本</NuxtLink>
+            class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <History class="size-3.5" />
+            {{ data.version_count }} 个历史版本
+          </NuxtLink>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" as-child>
+            <a
+              :href="`https://www.luogu.com.cn/article/${id}`"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink class="size-3.5" />
+              查看原文
+            </a>
+          </Button>
+
+          <Button variant="outline" size="sm" @click="copyOriginalMarkdown">
+            <Check v-if="copiedOriginal" class="size-3.5" />
+            <Copy v-else class="size-3.5" />
+            {{ copiedOriginal ? '已复制' : '复制原文' }}
+          </Button>
+
           <SaveButton content-type="article" :content-id="id" />
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- 与洛谷文章页保持一致：红色引用块 + 固定的“管理组提示：”标题。 -->
-    <ArticleAdminNote :note="data.admin_note" />
+      <!-- 与洛谷文章页保持一致：红色引用块 + 固定的“管理组提示：”标题。 -->
+      <ArticleAdminNote :note="data.admin_note" />
 
-    <article ref="contentRef" class="lg-content" v-html="html" />
+      <article ref="contentRef" class="lg-content mt-6" v-html="html" />
+    </template>
   </div>
 </template>
-
-<style scoped>
-.article-wrap {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* 蓝色渐变标题头 */
-.article-banner {
-  position: relative;
-  overflow: hidden;
-  background: var(--hero-bg);
-  border: 1px solid var(--hero-border);
-  border-radius: 12px;
-  padding: 22px 26px 18px;
-  margin-bottom: 16px;
-}
-.dark .article-banner {
-  background: var(--hero-bg);
-  border-color: var(--hero-border);
-}
-
-.article-title {
-  position: relative;
-  z-index: 1;
-  margin: 0 0 14px;
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--text);
-}
-
-.article-meta {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.author-block { display: flex; align-items: center; }
-.author-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: inherit;
-}
-.author-link:hover { text-decoration: none; }
-.author-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--bg);
-  flex-shrink: 0;
-}
-.avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
-  background: var(--lg-gray);
-}
-.avatar-fallback[data-color="Blue"]    { background: var(--lg-blue); }
-.avatar-fallback[data-color="Green"]   { background: var(--lg-green); }
-.avatar-fallback[data-color="Orange"]  { background: var(--lg-orange); }
-.avatar-fallback[data-color="Red"]     { background: var(--lg-red); }
-.avatar-fallback[data-color="Purple"]  { background: var(--lg-purple); }
-.avatar-fallback[data-color="Cyan"]    { background: var(--lg-cyan); }
-.avatar-fallback[data-color="Black"]   { background: var(--lg-black); }
-.avatar-fallback[data-color="Cheater"] { background: var(--lg-cheater-tag); }
-
-.meta-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.meta-item { font-size: 13px; }
-.meta-item.link { color: var(--link); text-decoration: none; }
-.meta-item.link:hover { text-decoration: underline; }
-.meta-action-btn,
-.meta-copy-btn {
-  gap: 6px;
-}
-.meta-action-btn svg,
-.meta-copy-btn svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-}
-
-.error-box {
-  padding: 30px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-align: center;
-}
-
-@media (max-width: 640px) {
-  .article-banner { padding: 18px 16px 14px; }
-  .article-title { font-size: 21px; }
-  .meta-right { margin-left: 0; }
-}
-</style>
