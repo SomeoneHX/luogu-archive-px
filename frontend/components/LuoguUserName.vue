@@ -30,6 +30,7 @@ const props = defineProps<{
   hidden?: boolean
   showBadge?: boolean
   noLink?: boolean
+  truncate?: boolean
 }>()
 
 const displayName = computed(() => {
@@ -57,7 +58,7 @@ const effectiveBadge = computed<string | null>(() => {
 </script>
 
 <template>
-  <span v-if="user" class="lg-user-wrap">
+  <span v-if="user" class="lg-user-wrap" :class="{ 'is-truncate': truncate }">
     <NuxtLink
       v-if="!noLink"
       :to="`/user/${user.uid}`"
@@ -134,6 +135,21 @@ const effectiveBadge = computed<string | null>(() => {
   align-items: center;
   gap: 4px;
   vertical-align: middle;
+}
+
+/* 名字过长时截断，称号与钩子气球不参与收缩 */
+.lg-user-wrap.is-truncate {
+  min-width: 0;
+}
+.lg-user-wrap.is-truncate > .lg-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lg-user-wrap.is-truncate > .lg-badge,
+.lg-user-wrap.is-truncate > .lg-mark {
+  flex: none;
 }
 
 /* 钩子 / 气球：以 currentColor 上色 */

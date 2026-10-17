@@ -20,23 +20,6 @@ const props = withDefaults(defineProps<{
   dateLabel: '上次更新',
 })
 
-// 洛谷用户名配色直接映射到调色板变量，省掉每种颜色一条 CSS。
-const AVATAR_COLORS: Record<string, string> = {
-  Gray: 'var(--lg-gray)',
-  Blue: 'var(--lg-blue)',
-  Green: 'var(--lg-green)',
-  Orange: 'var(--lg-orange)',
-  Yellow: 'var(--lg-yellow)',
-  Red: 'var(--lg-red)',
-  Purple: 'var(--lg-purple)',
-  Cyan: 'var(--lg-cyan)',
-  Black: 'var(--lg-black)',
-  Cheater: 'var(--lg-cheater-tag)',
-}
-const avatarColor = computed(() =>
-  AVATAR_COLORS[props.author?.color as string] || 'var(--lg-gray)',
-)
-
 const copied = ref(false)
 async function copyMarkdown() {
   if (!props.markdown) return
@@ -60,18 +43,10 @@ async function copyMarkdown() {
       <NuxtLink
         v-if="author"
         :to="`/user/${author.uid}`"
-        class="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
+        class="flex min-w-0 items-center gap-2 text-foreground transition-colors hover:text-primary"
       >
-        <Avatar class="size-8">
-          <AvatarImage v-if="author.avatar" :src="author.avatar" :alt="author.name" />
-          <AvatarFallback
-            class="text-xs font-semibold text-white"
-            :style="{ backgroundColor: avatarColor }"
-          >
-            {{ (author.name || '?').charAt(0).toUpperCase() }}
-          </AvatarFallback>
-        </Avatar>
-        <LuoguUserName :user="author" show-badge no-link />
+        <UserAvatar :user="author" size="lg" />
+        <LuoguUserName :user="author" show-badge no-link truncate />
       </NuxtLink>
       <span v-else>作者未收录</span>
 

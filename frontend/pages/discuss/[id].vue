@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronLeft, ChevronRight, Copy, MoreHorizontal } from '@lucide/vue'
+import { Check, Copy } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApi()
@@ -145,15 +145,10 @@ function goPage(page: number) {
               <NuxtLink
                 v-if="reply.author"
                 :to="`/user/${reply.author.uid}`"
-                class="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
+                class="flex min-w-0 items-center gap-2 text-foreground transition-colors hover:text-primary"
               >
-                <Avatar class="size-6">
-                  <AvatarImage v-if="reply.author.avatar" :src="reply.author.avatar" :alt="reply.author.name" />
-                  <AvatarFallback class="text-[10px] font-semibold">
-                    {{ (reply.author.name || '?').charAt(0).toUpperCase() }}
-                  </AvatarFallback>
-                </Avatar>
-                <LuoguUserName :user="reply.author" show-badge no-link />
+                <UserAvatar :user="reply.author" size="md" />
+                <LuoguUserName :user="reply.author" show-badge no-link truncate />
               </NuxtLink>
               <span v-else>用户未收录</span>
 
@@ -196,10 +191,7 @@ function goPage(page: number) {
           @update:page="goPage"
         >
           <PaginationContent v-slot="{ items }">
-            <PaginationPrevious aria-label="上一页">
-              <ChevronLeft class="size-4" />
-              <span class="hidden sm:inline">上一页</span>
-            </PaginationPrevious>
+            <PaginationPrevious aria-label="上一页" />
 
             <template v-for="(item, index) in items">
               <PaginationItem
@@ -211,21 +203,10 @@ function goPage(page: number) {
               >
                 {{ item.value }}
               </PaginationItem>
-              <PaginationEllipsis
-                v-else
-                :key="`e-${index}`"
-                :index="index"
-                aria-label="更多页"
-              >
-                <MoreHorizontal class="size-4" />
-                <span class="sr-only">更多页</span>
-              </PaginationEllipsis>
+              <PaginationEllipsis v-else :key="`e-${index}`" :index="index" />
             </template>
 
-            <PaginationNext aria-label="下一页">
-              <span class="hidden sm:inline">下一页</span>
-              <ChevronRight class="size-4" />
-            </PaginationNext>
+            <PaginationNext aria-label="下一页" />
           </PaginationContent>
         </Pagination>
       </section>

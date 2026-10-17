@@ -70,10 +70,6 @@ a {
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
-}
-
 @media (max-width: 768px) {
   :root {
     /* 手机端也保留明确边界，避免内容贴到屏幕右侧。 */
