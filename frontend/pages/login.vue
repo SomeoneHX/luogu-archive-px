@@ -1,13 +1,15 @@
 <script setup lang="ts">
-const form = ref({ email: '', password: '' })
-const err = ref('')
-const loading = ref(false)
-
-// 邮箱未验证时出现"重发验证邮件"入口
-const needVerify = ref(false)
-const resendMsg = ref('')
-const resendCooldown = ref(0)
-let cooldownTimer: ReturnType<typeof setInterval> | null = null
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { toast } from 'vue-sonner'
+import * as z from 'zod'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '~/components/ui/form'
 
 const api = useApi()
 const auth = useAuthStore()
@@ -19,28 +21,39 @@ const safeRedirect = computed(() => {
   return value.startsWith('/') && !value.startsWith('//') ? value : '/'
 })
 
-async function submit() {
-  err.value = ''
+const needVerify = ref(false)
+const serverError = ref('')
+const resendMsg = ref('')
+const resendCooldown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+const { handleSubmit, isSubmitting, values } = useForm({
+  validationSchema: toTypedSchema(z.object({
+    email: z.string().min(1, '请输入邮箱').email('邮箱格式不正确'),
+    password: z.string().min(1, '请输入密码'),
+  })),
+  initialValues: { email: '', password: '' },
+})
+
+const onSubmit = handleSubmit(async (formValues) => {
+  serverError.value = ''
   needVerify.value = false
   resendMsg.value = ''
-  loading.value = true
   try {
     const data = await api<any>('/auth/login', {
       method: 'POST',
-      body: form.value,
+      body: formValues,
     })
     auth.setTokens(data)
-    navigateTo(safeRedirect.value)
+    await navigateTo(safeRedirect.value)
   } catch (e: any) {
-    err.value = e?.data?.message || '登录失败'
+    serverError.value = e?.data?.message || '登录失败'
     // 后端对未验证邮箱返回"请先验证邮箱"
-    if (typeof err.value === 'string' && err.value.includes('验证邮箱')) {
+    if (typeof serverError.value === 'string' && serverError.value.includes('验证邮箱')) {
       needVerify.value = true
     }
-  } finally {
-    loading.value = false
   }
-}
+})
 
 function startCooldown(sec: number) {
   resendCooldown.value = sec
@@ -56,21 +69,23 @@ function startCooldown(sec: number) {
 
 async function resend() {
   if (resendCooldown.value > 0) return
-  if (!form.value.email) {
-    resendMsg.value = '请先填写邮箱'
+  if (!values.email) {
+    toast.warning('请先填写邮箱')
     return
   }
   resendMsg.value = ''
   try {
     const data = await api<{ message: string }>('/auth/resend-verification', {
       method: 'POST',
-      body: { email: form.value.email },
+      body: { email: values.email },
     })
     resendMsg.value = data.message || '已重新发送，请查收'
+    toast.success('验证邮件已发送')
     startCooldown(60)
   } catch (e: any) {
     const retry = e?.data?.data?.retry_after_sec
     resendMsg.value = e?.data?.message || '发送失败'
+    toast.error(resendMsg.value)
     if (typeof retry === 'number' && retry > 0) startCooldown(retry)
   }
 }
@@ -94,38 +109,44 @@ onUnmounted(() => {
 
     <Card class="gap-0 py-0">
       <CardContent class="p-6">
-        <form class="flex flex-col gap-4" @submit.prevent="submit">
-          <div class="grid gap-2">
-            <Label for="login-email">邮箱</Label>
-            <Input
-              id="login-email"
-              v-model="form.email"
-              type="email"
-              autocomplete="email"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+        <form class="flex flex-col gap-4" @submit="onSubmit">
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>邮箱</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  autocomplete="email"
+                  placeholder="you@example.com"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-          <div class="grid gap-2">
-            <Label for="login-password">密码</Label>
-            <Input
-              id="login-password"
-              v-model="form.password"
-              type="password"
-              autocomplete="current-password"
-              required
-            />
-          </div>
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <FormLabel>密码</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  autocomplete="current-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-          <Alert v-if="err" variant="destructive" class="px-3 py-2">
+          <Alert v-if="serverError" variant="destructive" class="px-3 py-2">
             <AlertDescription class="text-sm">
-              {{ err }}
+              {{ serverError }}
             </AlertDescription>
           </Alert>
 
-          <Button type="submit" class="w-full" :disabled="loading">
-            {{ loading ? '登录中...' : '登录' }}
+          <Button type="submit" class="w-full" :disabled="isSubmitting">
+            {{ isSubmitting ? '登录中...' : '登录' }}
           </Button>
         </form>
 

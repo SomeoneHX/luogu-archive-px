@@ -16,6 +16,7 @@ import {
   User,
   Wrench,
 } from '@lucide/vue'
+import { Toaster } from '~/components/ui/sonner'
 
 const colorMode = useColorMode()
 const auth = useAuthStore()
@@ -349,5 +350,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
         </div>
       </footer>
     </div>
+
+    <Toaster position="top-center" :duration="3200" />
   </div>
 </template>

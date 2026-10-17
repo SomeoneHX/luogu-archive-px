@@ -10,6 +10,11 @@ import {
   MessagesSquare,
   User,
 } from '@lucide/vue'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '~/components/ui/collapsible'
 
 definePageMeta({ layout: 'default' })
 
@@ -135,40 +140,42 @@ function announcementDate(value: string) {
       </div>
 
       <div class="divide-y divide-border">
-        <article
+        <Collapsible
           v-for="(announcement, index) in visibleAnnouncements"
           :key="announcement.id"
-          class="px-5 py-3.5"
+          :open="expandedAnnouncementId === announcement.id"
+          @update:open="toggleAnnouncement(announcement.id)"
         >
-          <button
-            type="button"
-            class="flex w-full items-start gap-3 text-left"
-            :aria-expanded="expandedAnnouncementId === announcement.id"
-            @click="toggleAnnouncement(announcement.id)"
-          >
-            <span
-              class="mt-1.5 size-1.5 shrink-0 rounded-full"
-              :class="index === 0 ? 'bg-primary' : 'bg-border'"
-            />
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-foreground">
-                {{ announcement.title }}
-              </span>
-              <span class="mt-0.5 block truncate text-xs text-muted-foreground">
-                {{ announcement.summary }}
-              </span>
-            </span>
-            <time class="shrink-0 text-xs tabular-nums text-muted-foreground">
-              {{ announcementDate(announcement.published_at) }}
-            </time>
-          </button>
-          <p
-            v-if="expandedAnnouncementId === announcement.id"
-            class="mt-3 whitespace-pre-wrap rounded-md bg-muted px-3 py-2.5 text-xs leading-relaxed text-muted-foreground"
-          >
-            {{ announcement.content }}
-          </p>
-        </article>
+          <article class="px-5 py-3.5">
+            <CollapsibleTrigger as-child>
+              <button
+                type="button"
+                class="flex w-full items-start gap-3 text-left"
+              >
+                <span
+                  class="mt-1.5 size-1.5 shrink-0 rounded-full"
+                  :class="index === 0 ? 'bg-primary' : 'bg-border'"
+                />
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-foreground">
+                    {{ announcement.title }}
+                  </span>
+                  <span class="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {{ announcement.summary }}
+                  </span>
+                </span>
+                <time class="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {{ announcementDate(announcement.published_at) }}
+                </time>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <p class="mt-3 whitespace-pre-wrap rounded-md bg-muted px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+                {{ announcement.content }}
+              </p>
+            </CollapsibleContent>
+          </article>
+        </Collapsible>
       </div>
     </Card>
 

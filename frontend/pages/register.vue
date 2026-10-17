@@ -1,37 +1,63 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { toast } from 'vue-sonner'
+import * as z from 'zod'
 import { CircleCheck } from '@lucide/vue'
-
-const form = ref({ email: '', password: '', display_name: '' })
-const passwordConfirm = ref('')
-const state = ref<'idle' | 'loading' | 'done'>('idle')
-const err = ref('')
-const captchaRef = ref<any>(null)
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '~/components/ui/form'
 
 const api = useApi()
 
-async function submit() {
-  err.value = ''
-  if (form.value.password !== passwordConfirm.value) {
-    err.value = '两次输入的密码不一致'
-    return
-  }
-  state.value = 'loading'
+const state = ref<'idle' | 'done'>('idle')
+const serverError = ref('')
+const captchaRef = ref<any>(null)
+
+const { handleSubmit, isSubmitting, values } = useForm({
+  validationSchema: toTypedSchema(
+    z.object({
+      email: z.string().min(1, '请输入邮箱').email('邮箱格式不正确'),
+      display_name: z.string().min(1, '请输入显示名').max(16, '最多 16 个字符'),
+      password: z
+        .string()
+        .min(8, '至少 8 位')
+        .regex(/[A-Za-z]/, '需包含字母')
+        .regex(/\d/, '需包含数字'),
+      passwordConfirm: z.string().min(1, '请再次输入密码'),
+    }).refine(value => value.password === value.passwordConfirm, {
+      message: '两次输入的密码不一致',
+      path: ['passwordConfirm'],
+    }),
+  ),
+  initialValues: { email: '', display_name: '', password: '', passwordConfirm: '' },
+})
+
+const onSubmit = handleSubmit(async (formValues) => {
+  serverError.value = ''
   try {
     const captchaToken = await captchaRef.value?.getToken?.()
     await api('/auth/register', {
       method: 'POST',
       body: {
-        ...form.value,
+        email: formValues.email,
+        display_name: formValues.display_name,
+        password: formValues.password,
         captcha_token: captchaToken || undefined,
       },
     })
+    toast.success('注册成功，请查收验证邮件')
     state.value = 'done'
   } catch (e: any) {
-    err.value = e?.data?.message || '注册失败'
+    serverError.value = e?.data?.message || '注册失败'
+    toast.error(serverError.value)
     captchaRef.value?.reset?.()
-    state.value = 'idle'
   }
-}
+})
 </script>
 
 <template>
@@ -48,71 +74,78 @@ async function submit() {
 
     <Card class="gap-0 py-0">
       <CardContent class="p-6">
-        <form v-if="state !== 'done'" class="flex flex-col gap-4" @submit.prevent="submit">
-          <div class="grid gap-2">
-            <Label for="reg-email">邮箱</Label>
-            <Input
-              id="reg-email"
-              v-model="form.email"
-              type="email"
-              autocomplete="email"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+        <form v-if="state === 'idle'" class="flex flex-col gap-4" @submit="onSubmit">
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>邮箱</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  autocomplete="email"
+                  placeholder="you@example.com"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-          <div class="grid gap-2">
-            <Label for="reg-name">显示名</Label>
-            <Input
-              id="reg-name"
-              v-model="form.display_name"
-              type="text"
-              minlength="1"
-              maxlength="16"
-              placeholder="1-16 个字符"
-              required
-            />
-          </div>
+          <FormField v-slot="{ componentField }" name="display_name">
+            <FormItem>
+              <FormLabel>显示名</FormLabel>
+              <FormControl>
+                <Input
+                  type="text"
+                  maxlength="16"
+                  placeholder="1-16 个字符"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-          <div class="grid gap-2">
-            <Label for="reg-password">密码</Label>
-            <Input
-              id="reg-password"
-              v-model="form.password"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              maxlength="128"
-              required
-            />
-            <p class="text-xs text-muted-foreground">
-              至少 8 位，需包含字母和数字
-            </p>
-          </div>
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <FormLabel>密码</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+              <p class="text-xs text-muted-foreground">
+                至少 8 位，需包含字母和数字
+              </p>
+            </FormItem>
+          </FormField>
 
-          <div class="grid gap-2">
-            <Label for="reg-password2">确认密码</Label>
-            <Input
-              id="reg-password2"
-              v-model="passwordConfirm"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              maxlength="128"
-              required
-            />
-          </div>
+          <FormField v-slot="{ componentField }" name="passwordConfirm">
+            <FormItem>
+              <FormLabel>确认密码</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
           <CaptchaChallenge ref="captchaRef" id-suffix="register" />
 
-          <Alert v-if="err" variant="destructive" class="px-3 py-2">
+          <Alert v-if="serverError" variant="destructive" class="px-3 py-2">
             <AlertDescription class="text-sm">
-              {{ err }}
+              {{ serverError }}
             </AlertDescription>
           </Alert>
 
-          <Button type="submit" class="w-full" :disabled="state === 'loading'">
-            {{ state === 'loading' ? '提交中...' : '注册' }}
+          <Button type="submit" class="w-full" :disabled="isSubmitting">
+            {{ isSubmitting ? '提交中...' : '注册' }}
           </Button>
         </form>
 
@@ -122,7 +155,7 @@ async function submit() {
             已发送验证邮件
           </h2>
           <p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            请到 {{ form.email }} 的邮箱查收，24 小时内点击验证链接即可登录。
+            请到 {{ values.email }} 的邮箱查收，24 小时内点击验证链接即可登录。
           </p>
           <Button variant="outline" size="sm" as-child class="mt-4">
             <NuxtLink to="/login">返回登录</NuxtLink>
