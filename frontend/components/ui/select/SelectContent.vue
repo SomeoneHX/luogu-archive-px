@@ -19,6 +19,10 @@ const props = withDefaults(
   defineProps<SelectContentProps & { class?: HTMLAttributes["class"] }>(),
   {
     position: "popper",
+    // 不锁定页面滚动：锁定会给 body 加 overflow: hidden，body 因此成为
+    // 滚动容器，页面内的 sticky 元素会失去参照被顶走，滚动条宽度补偿
+    // 还会让内容横向跳动。下拉本身不需要锁滚动。
+    bodyLock: false,
   },
 )
 const emits = defineEmits<SelectContentEmits>()

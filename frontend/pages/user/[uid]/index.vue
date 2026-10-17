@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, Check, ChartNoAxesColumn } from '@lucide/vue'
+import { ChartNoAxesColumn, Check, Copy, Loader2 } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApi()

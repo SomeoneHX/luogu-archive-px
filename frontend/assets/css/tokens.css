@@ -61,8 +61,15 @@ body {
   line-height: 1.7;
   transition: background-color var(--duration-base) var(--ease-out-soft),
     color var(--duration-base) var(--ease-out-soft);
-  /* 兜底防止子布局意外溢出导致整页横向滚动条 */
-  overflow-x: hidden;
+}
+
+/* 只作用在 html：clip 不创建滚动容器，横向溢出被裁掉且不影响 sticky 的参照。
+   若加在 body 上，弹层锁定滚动（body overflow: hidden）时 body 会成为
+   滚动容器，页面内 sticky 元素会失去参照、跟着文档流被顶走。 */
+html {
+  overflow-x: clip;
+  /* 弹层打开时会锁定滚动，固定预留滚动条槽位，避免内容宽度变化导致横向跳动 */
+  scrollbar-gutter: stable;
 }
 
 a {
