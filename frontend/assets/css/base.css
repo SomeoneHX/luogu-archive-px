@@ -1,27 +1,26 @@
 /* 基础样式 + 洛谷用户名颜色 + Dark Mode 变量 */
 
 :root {
-  --bg: #f7f8fa;
-  --page-bg:
-    linear-gradient(180deg, rgba(223, 239, 255, 0.92) 0%, rgba(247, 248, 250, 0.98) 260px),
-    linear-gradient(135deg, #e8f3ff 0%, #f7f8fa 46%, #f7f8fa 100%);
-  --surface: #ffffff;
-  --text: #1f2328;
-  --text-muted: #57606a;
-  --border: #d0d7de;
-  --link: #0969da;
-  --hover: #f3f4f6;
+  /* 兼容期别名：指向 tailwind.css 里的 shadcn token。
+     尚未迁移的页面继续用 var(--surface) / var(--text) 等，迁移完成后统一清理。 */
+  --bg: var(--background);
+  --page-bg: var(--background);
+  --surface: var(--card);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --link: var(--primary);
+  --hover: var(--accent);
+  /* --border 沿用 tailwind.css 的定义，语义一致，不再重复声明。 */
+
   --banner-bg: #fff8e1;
   --banner-border: #f0c040;
-  /* 文章头 banner（浅色渐变 → 深色渐变） */
-  --article-banner-bg: linear-gradient(135deg, #d9ecff 0%, #f3f8ff 100%);
+  --article-banner-bg: var(--card);
 
   --page-max-width: 1180px;
   --page-gutter: 40px;
 
-  /* 页面头图：浅色模式的蓝更明确一些 */
-  --hero-bg: linear-gradient(135deg, #dcecff 0%, #f4f9ff 100%);
-  --hero-border: #c8dcf5;
+  --hero-bg: var(--card);
+  --hero-border: var(--border);
   --hero-text: var(--text);
   --hero-text-muted: var(--text-muted);
 
@@ -42,37 +41,22 @@
 }
 
 .dark {
-  --bg: #0d1117;
-  --page-bg:
-    linear-gradient(180deg, rgba(13, 27, 48, 0.96) 0%, rgba(13, 17, 23, 0.98) 280px),
-    linear-gradient(135deg, #0e1a2d 0%, #0d1117 54%, #0d1117 100%);
-  --surface: #161b22;
-  --text: #e6edf3;
-  --text-muted: #8b949e;
-  --border: #30363d;
-  --link: #58a6ff;
-  --hover: #1f2937;
   --banner-bg: #3b2f00;
   --banner-border: #8b6e00;
-  --article-banner-bg: linear-gradient(135deg, #172b49 0%, #1c2128 100%);
   /* 黑题在深色模式下用浅蓝，跟洛谷官方一致 */
   --lg-black-name: #accbf4;
-  --hero-bg: linear-gradient(135deg, #14233a 0%, #182130 100%);
-  --hero-border: #29405f;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--page-bg);
-  background-attachment: fixed;
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
   font-size: 16px;
-  line-height: 1.6;
-  transition: background 0.2s, color 0.2s;
+  line-height: 1.7;
+  transition: background-color var(--duration-base) var(--ease-out-soft),
+    color var(--duration-base) var(--ease-out-soft);
   /* 兜底防止子布局意外溢出导致整页横向滚动条 */
   overflow-x: hidden;
 }
@@ -93,23 +77,28 @@ a:hover {
   box-sizing: border-box;
   flex-shrink: 0;
   padding: 6px 14px;
-  border: 1px solid var(--hero-border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
   cursor: pointer;
   font: inherit;
   font-size: 13.5px;
   line-height: 1.5;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.15s;
+  transition: background var(--duration-fast) var(--ease-out-soft),
+    border-color var(--duration-fast) var(--ease-out-soft),
+    color var(--duration-fast) var(--ease-out-soft),
+    transform var(--duration-fast) var(--ease-out-soft);
 }
 .archive-action-button:hover:not(:disabled) {
-  border-color: var(--link);
-  color: var(--link);
+  border-color: var(--primary);
+  color: var(--primary);
   text-decoration: none;
-  transform: translateY(-1px);
+}
+.archive-action-button:active:not(:disabled) {
+  transform: scale(0.985);
 }
 .archive-action-button:disabled,
 .archive-action-button[aria-disabled="true"] {
@@ -149,10 +138,11 @@ a:hover {
 .page-hero,
 .origin-hero {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--hero-bg);
   border: 1px solid var(--hero-border);
+  box-shadow: var(--shadow-card);
 }
 .page-hero {
   padding: 24px 28px;
@@ -208,10 +198,11 @@ a:hover {
 .feed-hero,
 .problem-hero {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--hero-bg);
   border: 1px solid var(--hero-border);
+  box-shadow: var(--shadow-card);
 }
 .feed-hero {
   padding: 24px 28px;

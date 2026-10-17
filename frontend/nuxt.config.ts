@@ -1,3 +1,5 @@
+import tailwindcss from '@tailwindcss/vite'
+
 const extendedArchiveModulesEnabled = process.env.NUXT_PUBLIC_EXTENDED_ARCHIVE_MODULES_ENABLED === 'true'
 
 const hiddenArchiveExactPages = new Set(['/feed', '/fake-realtime'])
@@ -6,12 +8,19 @@ const hiddenArchivePagePrefixes = ['/problem', '/contest', '/admin/problems', '/
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
+  vite: {
+    plugins: [tailwindcss()],
+  },
   modules: [
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@vueuse/nuxt',
-    '@nuxt/fonts',
+    'shadcn-nuxt',
   ],
+  shadcn: {
+    prefix: '',
+    componentDir: '@/components/ui',
+  },
   runtimeConfig: {
     apiInternalUrl:
       process.env.NUXT_API_INTERNAL_URL
@@ -35,7 +44,12 @@ export default defineNuxtConfig({
     fallback: 'light',
     classSuffix: '',
   },
-  css: ['~/assets/css/base.css', 'katex/dist/katex.min.css'],
+  css: [
+    '~/assets/css/tailwind.css',
+    'katex/dist/katex.min.css',
+    '~/assets/css/base.css',
+    '~/assets/css/content.css',
+  ],
   routeRules: {
     '/favicon.png': {
       headers: {
