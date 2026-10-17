@@ -5,17 +5,20 @@ import { Check, Copy, ExternalLink, History } from '@lucide/vue'
  * 内容详情页的通用头部：栏目名 + 标题 + 作者行 + 操作行。
  * 文章、剪贴板、讨论、犇犇共用，标题由调用方通过默认插槽传入。
  */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   label: string
   author?: any
   crawledAt?: string
+  dateLabel?: string
   versionCount?: number
   historyTo?: string
   originalHref: string
   markdown?: string
   contentType: string
   contentId: string
-}>()
+}>(), {
+  dateLabel: '上次更新',
+})
 
 // 洛谷用户名配色直接映射到调色板变量，省掉每种颜色一条 CSS。
 const AVATAR_COLORS: Record<string, string> = {
@@ -74,7 +77,7 @@ async function copyMarkdown() {
 
       <Separator orientation="vertical" class="h-4" />
 
-      <span class="text-xs">上次更新 · {{ crawledAt }}</span>
+      <span class="text-xs">{{ dateLabel }} · {{ crawledAt }}</span>
 
       <NuxtLink
         v-if="versionCount && versionCount > 1 && historyTo"
