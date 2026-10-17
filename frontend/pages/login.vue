@@ -81,74 +81,80 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="wrap">
-    <h1>登录</h1>
-    <form @submit.prevent="submit">
-      <label>邮箱</label>
-      <input v-model="form.email" type="email" autocomplete="email" required>
-      <label>密码</label>
-      <input v-model="form.password" type="password" autocomplete="current-password" required>
-      <button :disabled="loading" type="submit">
-        {{ loading ? '登录中...' : '登录' }}
-      </button>
-      <p v-if="err" class="err">{{ err }}</p>
-    </form>
-
-    <div v-if="needVerify" class="resend-box">
-      <p>邮箱还没验证？</p>
-      <button class="resend-btn" :disabled="resendCooldown > 0" @click="resend">
-        {{ resendCooldown > 0 ? `重新发送（${resendCooldown}s）` : '重新发送验证邮件' }}
-      </button>
-      <p v-if="resendMsg" class="resend-msg">{{ resendMsg }}</p>
+  <div class="mx-auto w-full max-w-[380px] py-10 sm:py-16">
+    <div class="mb-6 text-center">
+      <img src="/favicon.png" alt="" class="mx-auto mb-4 size-12 rounded-xl">
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+        登录
+      </h1>
+      <p class="mt-1.5 text-sm text-muted-foreground">
+        登录后可以关注内容、追踪版本变化
+      </p>
     </div>
 
-    <p class="tip">还没账号？<NuxtLink to="/register">注册</NuxtLink></p>
+    <Card class="gap-0 py-0">
+      <CardContent class="p-6">
+        <form class="flex flex-col gap-4" @submit.prevent="submit">
+          <div class="grid gap-2">
+            <Label for="login-email">邮箱</Label>
+            <Input
+              id="login-email"
+              v-model="form.email"
+              type="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div class="grid gap-2">
+            <Label for="login-password">密码</Label>
+            <Input
+              id="login-password"
+              v-model="form.password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <Alert v-if="err" variant="destructive" class="px-3 py-2">
+            <AlertDescription class="text-sm">
+              {{ err }}
+            </AlertDescription>
+          </Alert>
+
+          <Button type="submit" class="w-full" :disabled="loading">
+            {{ loading ? '登录中...' : '登录' }}
+          </Button>
+        </form>
+
+        <div v-if="needVerify" class="mt-4 rounded-lg border border-border bg-muted/60 p-3">
+          <p class="text-sm text-muted-foreground">
+            邮箱还没验证？
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="mt-2 w-full"
+            :disabled="resendCooldown > 0"
+            @click="resend"
+          >
+            {{ resendCooldown > 0 ? `重新发送（${resendCooldown}s）` : '重新发送验证邮件' }}
+          </Button>
+          <p v-if="resendMsg" class="mt-2 text-xs text-muted-foreground">
+            {{ resendMsg }}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+
+    <p class="mt-6 text-center text-sm text-muted-foreground">
+      还没账号？
+      <NuxtLink to="/register" class="font-medium text-primary hover:underline">
+        注册
+      </NuxtLink>
+    </p>
   </div>
 </template>
-
-<style scoped>
-.wrap { max-width: 400px; margin: 40px auto; }
-label { display: block; margin-top: 12px; font-weight: 500; }
-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  box-sizing: border-box;
-}
-button {
-  margin-top: 16px;
-  padding: 10px 20px;
-  background: var(--link);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  width: 100%;
-}
-.err { color: var(--lg-red); margin-top: 10px; }
-.tip { margin-top: 12px; color: var(--text-muted); }
-
-.resend-box {
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-}
-.resend-box > p { margin: 0 0 8px; color: var(--text-muted); font-size: 14px; }
-.resend-btn {
-  margin-top: 0;
-  background: transparent;
-  color: var(--link);
-  border: 1px solid var(--link);
-}
-.resend-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.resend-msg { margin: 10px 0 0; font-size: 13px; color: var(--text-muted); }
-</style>
