@@ -1,9 +1,30 @@
 <script setup lang="ts">
 import type { PluginSnapshot, PluginTag } from '~/types/plugin'
+import { CalendarDate, parseDate } from '@internationalized/date'
+import { CalendarIcon } from '@lucide/vue'
 import { PLUGIN_CODE_COPY_MAX_BYTES } from '~/utils/pluginCode'
 
 const model = defineModel<PluginSnapshot>({ required: true })
 const props = defineProps<{ tags: PluginTag[] }>()
+
+const now = new Date()
+const today = new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate())
+
+const df = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+const verifiedDate = computed({
+  get: () => (model.value.last_verified_on ? parseDate(model.value.last_verified_on) : undefined),
+  set: (value: any) => {
+    model.value.last_verified_on = value ? value.toString() : ''
+    pickerOpen.value = false
+  },
+})
+const pickerOpen = ref(false)
+const verifiedDateText = computed(() =>
+  verifiedDate.value ? df.format(verifiedDate.value.toDate(getLocalTimeZone())) : '',
+)
+function getLocalTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
 
 const codeBytes = computed(() => new TextEncoder().encode(model.value.code || '').length)
 const codeTooLarge = computed(() => codeBytes.value > 5 * 1024 * 1024)
@@ -127,7 +148,27 @@ function toggleTag(tagId: number, checked: boolean) {
         </div>
         <div class="space-y-1.5">
           <Label class="text-sm font-normal text-muted-foreground">最后验证日期</Label>
-          <Input v-model="model.last_verified_on" type="date" required />
+          <Popover :open="pickerOpen" @update:open="pickerOpen = $event">
+            <PopoverTrigger as-child>
+              <Button
+                type="button"
+                variant="outline"
+                class="w-full justify-start px-3 font-normal"
+                :class="!verifiedDate && 'text-muted-foreground'"
+              >
+                <CalendarIcon class="size-4" />
+                {{ verifiedDateText || '选择日期' }}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-auto p-0" align="start">
+              <Calendar
+                v-model="verifiedDate"
+                initial-view="day"
+                calendar-label="最后验证日期"
+                :max-value="today"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
