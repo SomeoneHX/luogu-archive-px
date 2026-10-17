@@ -14,7 +14,7 @@ interface LuoguUserBrief {
 
 const props = withDefaults(defineProps<{
   user: LuoguUserBrief | null | undefined
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }>(), {
   size: 'md',
 })
@@ -25,6 +25,7 @@ const SIZES = {
   md: { box: 'size-6', text: 'text-[10px]' },
   lg: { box: 'size-8', text: 'text-xs' },
   xl: { box: 'size-10', text: 'text-sm' },
+  '2xl': { box: 'size-20', text: 'text-2xl' },
 } as const
 
 const COLORS: Record<string, string> = {

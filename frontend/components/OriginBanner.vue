@@ -1,8 +1,11 @@
 <!--
-  蓝色渐变页面头图 + 原文归属 + 保存按钮。
+  原文归属条：查看洛谷原文、作者、上次更新时间，右侧是保存按钮。
   内容详情页（文章 / 剪贴板 / 用户 / 陶片 / 题目）顶部挂一个。
+  compact 时只渲染一行信息条，不渲染标题。
 -->
 <script setup lang="ts">
+import { ExternalLink } from '@lucide/vue'
+
 const { fromNow } = useTime()
 
 const props = defineProps<{
@@ -22,75 +25,43 @@ const relTime = computed(() =>
 </script>
 
 <template>
-  <div class="origin-hero" :class="{ compact }">
-    <div class="hero-inner">
-      <h1 v-if="title" class="hero-title">{{ title }}</h1>
-      <div class="hero-meta">
-        <span class="attr">
-          <a :href="originUrl" target="_blank" rel="noopener noreferrer">查看洛谷原文</a>
-          <span v-if="authorName">
-            · 作者：
-            <a v-if="authorHref" :href="authorHref">{{ authorName }}</a>
-            <span v-else>{{ authorName }}</span>
-          </span>
-          · 上次更新：{{ relTime }}
+  <header
+    class="flex flex-wrap items-center justify-between gap-3"
+    :class="compact
+      ? 'rounded-lg border border-border bg-card px-4 py-2.5'
+      : 'border-b border-border pb-5'"
+  >
+    <div class="min-w-0 flex-1">
+      <h1
+        v-if="title && !compact"
+        class="text-2xl font-semibold tracking-tight text-foreground"
+      >
+        {{ title }}
+      </h1>
+      <p
+        class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground"
+        :class="title && !compact ? 'mt-1.5' : ''"
+      >
+        <a
+          :href="originUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-primary hover:underline"
+        >
+          <ExternalLink class="size-3.5" />
+          查看洛谷原文
+        </a>
+        <span aria-hidden="true">·</span>
+        <span v-if="authorName">
+          作者：
+          <a v-if="authorHref" :href="authorHref" class="text-primary hover:underline">{{ authorName }}</a>
+          <span v-else>{{ authorName }}</span>
+          ·
         </span>
-        <SaveButton :content-type="contentType" :content-id="contentId" />
-      </div>
+        <span>上次更新：{{ relTime }}</span>
+      </p>
     </div>
-  </div>
+
+    <SaveButton :content-type="contentType" :content-id="contentId" />
+  </header>
 </template>
-
-<style scoped>
-.origin-hero {
-  position: relative;
-  border-radius: 12px;
-  padding: 22px 26px;
-  margin-bottom: 20px;
-  overflow: hidden;
-  background: var(--hero-bg);
-  border: 1px solid var(--hero-border);
-}
-.hero-inner {
-  position: relative;
-  z-index: 1;
-}
-.hero-title {
-  margin: 0 0 10px;
-  color: var(--hero-text);
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
-.hero-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.attr {
-  flex: 1;
-  min-width: 0;
-  color: var(--hero-text-muted);
-  font-size: 13.5px;
-}
-.attr a {
-  color: var(--link);
-  text-decoration: none;
-}
-.attr a:hover { text-decoration: underline; }
-
-@media (max-width: 768px) {
-  .origin-hero { padding: 18px 16px; border-radius: 12px; }
-  .hero-title { font-size: 21px; }
-}
-
-.origin-hero.compact {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-}
-.origin-hero.compact .hero-title { display: none; }
-</style>

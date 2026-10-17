@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Copy, Check, ChartNoAxesColumn } from '@lucide/vue'
+
 const route = useRoute()
 const api = useApi()
 const { smart, format } = useTime()
@@ -337,7 +339,7 @@ function historyUser(entry: UserNameHistoryItem) {
 
 // 左侧 Tab 切换
 type TabKey = 'activity' | 'intro' | 'prizes' | 'names'
-const activeTab = ref<TabKey>('activity')
+const activeTab = ref<string>('activity')
 
 const tabs: Array<{ key: TabKey; label: string; show: () => boolean }> = [
   { key: 'activity', label: '活动', show: () => true },
@@ -345,6 +347,20 @@ const tabs: Array<{ key: TabKey; label: string; show: () => boolean }> = [
   { key: 'prizes', label: 'OI 获奖', show: () => (profile.value?.prizes?.length ?? 0) > 0 },
   { key: 'names', label: '用户名历史', show: () => nameHistory.value.length > 1 },
 ]
+
+const visibleTabs = computed(() => tabs.filter(t => t.show()))
+
+const stats = computed(() => {
+  const p = profile.value
+  if (!p) return []
+  return [
+    { label: '关注', value: String(p.following_count) },
+    { label: '粉丝', value: String(p.follower_count) },
+    ...(p.ranking !== null ? [{ label: '做题榜', value: `#${p.ranking}` }] : []),
+    ...(p.ccf_level > 0 ? [{ label: 'CCF', value: String(p.ccf_level) }] : []),
+    ...(p.xcpc_level > 0 ? [{ label: 'XCPC', value: String(p.xcpc_level) }] : []),
+  ]
+})
 
 // 代码复制按钮：绑在右侧内容容器上，覆盖 activity / intro 两种 md 场景
 const contentRef = ref<HTMLElement | null>(null)
@@ -355,16 +371,32 @@ function formatScore(s: number): string {
   return Number.isInteger(s) ? String(s) : s.toFixed(2)
 }
 </script>
-
 <template>
-  <LoadingPanel v-if="profilePending" title="正在加载用户档案" text="页面已经打开，正在读取用户资料和活动记录…" />
-
-  <div v-else-if="error" class="error-box">
-    <h2>{{ error.data?.message || '用户未收录' }}</h2>
-    <p>已触发一次爬取，稍等片刻刷新即可。</p>
+  <div v-if="profilePending" class="space-y-4">
+    <Skeleton class="h-9 w-full rounded-md" />
+    <div class="grid items-start gap-6 lg:grid-cols-[268px_minmax(0,1fr)]">
+      <Card class="gap-0 py-0">
+        <div class="flex flex-col items-center gap-3 p-6">
+          <Skeleton class="size-20 rounded-full" />
+          <Skeleton class="h-5 w-32" />
+          <Skeleton class="h-3 w-40" />
+          <div class="mt-2 grid w-full grid-cols-3 gap-2">
+            <Skeleton v-for="i in 3" :key="i" class="h-12 rounded-md" />
+          </div>
+        </div>
+      </Card>
+      <div class="space-y-3">
+        <Skeleton v-for="i in 5" :key="i" class="h-24 rounded-lg" />
+      </div>
+    </div>
   </div>
 
-  <div v-else-if="profile" class="user-page">
+  <Card v-else-if="error" class="mx-auto max-w-md gap-0 py-10 text-center">
+    <h2 class="text-base font-semibold text-foreground">{{ error.data?.message || '用户未收录' }}</h2>
+    <p class="mt-2 text-sm text-muted-foreground">已触发一次爬取，稍等片刻刷新即可。</p>
+  </Card>
+
+  <div v-else-if="profile" class="space-y-4">
     <OriginBanner
       :origin-url="`https://www.luogu.com.cn/user/${uid}`"
       compact
@@ -373,258 +405,308 @@ function formatScore(s: number): string {
       :content-id="String(uid)"
     />
 
-    <div class="two-col">
-      <!-- 左侧：用户信息 + Tab -->
-      <aside class="sidebar">
-        <section class="profile-head">
-          <img v-if="profile.avatar" :src="profile.avatar" class="avatar" alt="">
-          <h1 class="name-row">
-            <LuoguUserName :user="userBrief" :hidden="profile.name_hidden" show-badge no-link />
-          </h1>
-          <p v-if="profile.slogan" class="slogan">{{ profile.slogan }}</p>
+    <Tabs
+      v-model="activeTab"
+      orientation="vertical"
+      class="grid items-start gap-6 lg:grid-cols-[268px_minmax(0,1fr)]"
+    >
+      <aside class="flex min-w-0 flex-col gap-3">
+        <Card class="gap-0 py-0">
+          <div class="flex flex-col items-center px-5 py-6 text-center">
+            <UserAvatar :user="userBrief" size="2xl" />
 
-          <div class="badges">
-            <span v-if="profile.is_banned" class="tag banned">已封禁</span>
-            <span v-if="profile.is_admin" class="tag admin">管理员</span>
+            <h1 class="mt-3 text-lg font-semibold leading-snug text-foreground">
+              <LuoguUserName :user="userBrief" :hidden="profile.name_hidden" show-badge no-link />
+            </h1>
+
+            <p v-if="profile.slogan" class="mt-1.5 text-sm text-muted-foreground">
+              {{ profile.slogan }}
+            </p>
+
+            <div v-if="profile.is_banned || profile.is_admin" class="mt-2 flex flex-wrap justify-center gap-1.5">
+              <Badge v-if="profile.is_banned" variant="destructive" class="h-5 px-1.5 font-normal">已封禁</Badge>
+              <Badge
+                v-if="profile.is_admin"
+                variant="secondary"
+                class="h-5 bg-[var(--lg-blue)]/12 px-1.5 font-normal text-[var(--lg-blue)]"
+              >
+                管理员
+              </Badge>
+            </div>
+
+            <div class="mt-4 flex w-full items-center gap-2">
+              <FollowButton :uid="profile.uid" class="flex-1" />
+              <Button variant="outline" size="sm" as-child>
+                <NuxtLink :to="`/user/${profile.uid}/card`">
+                  <ChartNoAxesColumn class="size-3.5" />
+                  图卡
+                </NuxtLink>
+              </Button>
+            </div>
+
+            <dl class="mt-4 flex w-full divide-x divide-border overflow-hidden rounded-md border border-border">
+              <div v-for="s in stats" :key="s.label" class="flex-1 px-1 py-2.5">
+                <dt class="text-[11px] leading-tight text-muted-foreground">{{ s.label }}</dt>
+                <dd class="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{{ s.value }}</dd>
+              </div>
+            </dl>
           </div>
+        </Card>
 
-          <FollowButton :uid="profile.uid" />
-          <NuxtLink :to="`/user/${profile.uid}/card`" class="card-link-btn">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4 19V5M9 19v-8M14 19v-5M19 19V9M3 19h18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>图卡</span>
-          </NuxtLink>
-
-          <dl class="stats">
-            <div><dt>关注</dt><dd>{{ profile.following_count }}</dd></div>
-            <div><dt>粉丝</dt><dd>{{ profile.follower_count }}</dd></div>
-            <div v-if="profile.ranking !== null"><dt>做题榜</dt><dd>#{{ profile.ranking }}</dd></div>
-            <div v-if="profile.ccf_level > 0"><dt>CCF</dt><dd>{{ profile.ccf_level }}</dd></div>
-            <div v-if="profile.xcpc_level > 0"><dt>XCPC</dt><dd>{{ profile.xcpc_level }}</dd></div>
-          </dl>
-        </section>
-
-        <!-- Tab 切换（垂直方向，侧栏底部） -->
-        <nav class="tabs">
-          <button
-            v-for="t in tabs.filter(x => x.show())"
+        <TabsList class="h-auto w-full flex-col items-stretch gap-0.5 bg-transparent p-0">
+          <TabsTrigger
+            v-for="t in visibleTabs"
             :key="t.key"
-            :class="{ active: activeTab === t.key }"
-            @click="activeTab = t.key"
-          >{{ t.label }}</button>
-        </nav>
+            :value="t.key"
+            class="h-9 w-full flex-none justify-start rounded-md px-2.5 text-sm font-normal data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+          >
+            {{ t.label }}
+          </TabsTrigger>
+        </TabsList>
       </aside>
 
-      <!-- 右侧：tab 内容 -->
-      <main ref="contentRef" class="content">
-        <!-- 活动 -->
-        <section v-if="activeTab === 'activity'">
-          <div class="section-head">
-            <h2>活动</h2>
-            <div class="activity-filters">
-              <label class="toggle">
-                <input type="checkbox" v-model="includeFeed"> 显示犇犇
+      <div ref="contentRef" class="min-w-0">
+        <TabsContent value="activity" class="mt-0">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+            <h2 class="text-lg font-semibold text-foreground">活动</h2>
+            <div class="flex flex-wrap items-center gap-4">
+              <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox v-model="includeFeed" />
+                显示犇犇
               </label>
-              <label class="toggle">
-                <input type="checkbox" v-model="includeDiscussion"> 显示讨论
+              <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox v-model="includeDiscussion" />
+                显示讨论
               </label>
             </div>
           </div>
-          <LoadingPanel
-            v-if="activityInitialPending && !activity.length"
-            title="正在加载活动记录"
-            text="用户资料已经打开，正在读取活动时间线…"
-          />
 
-          <ul v-else-if="activity && activity.length" class="activity-list">
-            <li v-for="(a, idx) in activity" :key="idx" :class="`act-${a.kind}`">
-              <span class="kind-tag">{{ KIND_LABEL[a.kind] || a.kind }}</span>
-              <span class="time">{{ smart(a.time) }}</span>
+          <div v-if="activityInitialPending && !activity.length" class="mt-4 space-y-3">
+            <Skeleton v-for="i in 5" :key="i" class="h-20 rounded-lg" />
+          </div>
+
+          <ul v-else-if="activity && activity.length" class="mt-4 space-y-3">
+            <li
+              v-for="(a, idx) in activity"
+              :key="idx"
+              class="rounded-lg border border-border bg-card p-4"
+            >
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="secondary" class="h-5 px-1.5 font-normal">
+                  {{ KIND_LABEL[a.kind] || a.kind }}
+                </Badge>
+                <time class="tabular-nums">{{ smart(a.time) }}</time>
+              </div>
+
               <template v-if="a.kind === 'feed'">
                 <div
-                  class="lg-content"
+                  class="lg-content mt-2"
                   v-html="feedHtml(a.feed_content || '', a.feed_merged_suffix_md, a.feed_merged_link_md || [], a.feed_merged_image_md || [])"
                 />
-                <div class="feed-foot">
-                  <NuxtLink :to="`/feed/${a.feed_id}`" class="feed-id">#{{ a.feed_id }}</NuxtLink>
+                <div class="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                  <NuxtLink :to="`/feed/${a.feed_id}`" class="tabular-nums transition-colors hover:text-foreground">
+                    #{{ a.feed_id }}
+                  </NuxtLink>
                   <FeedReplyButton
                     :content="a.feed_content || ''"
                     :sender-name="profile.name_hidden ? `UID ${profile.uid}` : profile.name"
                   />
                 </div>
               </template>
-              <template v-else-if="a.kind === 'article'">
-                <div class="link-line">
-                  <NuxtLink :to="`/article/${a.article_id}`">{{ a.article_title || a.article_id }}</NuxtLink>
-                </div>
-              </template>
-              <template v-else-if="a.kind === 'paste'">
-                <div class="link-line">
-                  <NuxtLink :to="`/paste/${a.paste_id}`">剪贴板 {{ a.paste_id }}</NuxtLink>
-                </div>
-              </template>
-              <template v-else-if="a.kind === 'discussion'">
-                <h3 class="discussion-title">
-                  <NuxtLink :to="`/discuss/${a.discussion_id}`">{{ a.discussion_title || `讨论 ${a.discussion_id}` }}</NuxtLink>
-                </h3>
-                <!-- 摘要使用后端生成的纯文本，避免半截 Markdown 破坏排版。 -->
-                <p v-if="a.discussion_excerpt" class="discussion-excerpt">{{ a.discussion_excerpt }}</p>
-                <div v-if="a.discussion_reply_count != null" class="discussion-stats">回复 {{ a.discussion_reply_count }}</div>
-              </template>
-              <template v-else-if="a.kind === 'discussion_reply'">
-                <p class="discussion-context">
-                  在讨论 <NuxtLink :to="a.discussion_reply_page ? `/discuss/${a.discussion_id}?page=${a.discussion_reply_page}#reply-${a.discussion_reply_id}` : `/discuss/${a.discussion_id}`">《{{ a.discussion_title || `讨论 ${a.discussion_id}` }}》</NuxtLink> 回复：
-                </p>
-                <blockquote class="discussion-quote">{{ a.discussion_reply_excerpt || '（暂无回复摘要）' }}</blockquote>
-              </template>
-              <template v-else-if="a.kind === 'judgement'">
-                <div class="judgement-card">
-                  <header class="head">
-                    <span
-                      class="action-tag"
-                      :class="(a.judgement_revoked ?? 0) === 0 && (a.judgement_added ?? 0) === 0
-                        ? 'cheater'
-                        : ((a.judgement_revoked ?? 0) > 0 ? 'revoked' : 'added')"
-                    >
-                      <template v-if="(a.judgement_revoked ?? 0) > 0 && (a.judgement_added ?? 0) === 0">
-                        撤销权限
-                      </template>
-                      <template v-else-if="(a.judgement_added ?? 0) > 0 && (a.judgement_revoked ?? 0) === 0">
-                        授予权限
-                      </template>
-                      <template v-else-if="(a.judgement_revoked ?? 0) === 0 && (a.judgement_added ?? 0) === 0">
-                        棕名惩罚
-                      </template>
-                      <template v-else>
-                        权限变更
-                      </template>
-                    </span>
-                  </header>
 
-                  <div v-if="describePermission(a.judgement_revoked ?? 0).length" class="perm-row">
-                    <span class="perm-label revoked">● 撤销</span>
+              <template v-else-if="a.kind === 'article'">
+                <NuxtLink
+                  :to="`/article/${a.article_id}`"
+                  class="mt-2 block truncate text-sm text-primary hover:underline"
+                >
+                  {{ a.article_title || a.article_id }}
+                </NuxtLink>
+              </template>
+
+              <template v-else-if="a.kind === 'paste'">
+                <NuxtLink
+                  :to="`/paste/${a.paste_id}`"
+                  class="mt-2 block truncate text-sm text-primary hover:underline"
+                >
+                  剪贴板 {{ a.paste_id }}
+                </NuxtLink>
+              </template>
+
+              <template v-else-if="a.kind === 'discussion'">
+                <h3 class="mt-2 truncate text-sm font-medium text-foreground">
+                  <NuxtLink :to="`/discuss/${a.discussion_id}`" class="transition-colors hover:text-primary">
+                    {{ a.discussion_title || `讨论 ${a.discussion_id}` }}
+                  </NuxtLink>
+                </h3>
+                <p v-if="a.discussion_excerpt" class="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                  {{ a.discussion_excerpt }}
+                </p>
+                <p v-if="a.discussion_reply_count != null" class="mt-1.5 text-xs text-muted-foreground">
+                  回复 {{ a.discussion_reply_count }}
+                </p>
+              </template>
+
+              <template v-else-if="a.kind === 'discussion_reply'">
+                <p class="mt-2 text-xs text-muted-foreground">
+                  在讨论
+                  <NuxtLink
+                    :to="a.discussion_reply_page ? `/discuss/${a.discussion_id}?page=${a.discussion_reply_page}#reply-${a.discussion_reply_id}` : `/discuss/${a.discussion_id}`"
+                    class="text-primary hover:underline"
+                  >《{{ a.discussion_title || `讨论 ${a.discussion_id}` }}》</NuxtLink>
+                  回复：
+                </p>
+                <blockquote class="mt-2 border-l-2 border-border pl-3 text-sm leading-relaxed text-muted-foreground">
+                  {{ a.discussion_reply_excerpt || '（暂无回复摘要）' }}
+                </blockquote>
+              </template>
+
+              <template v-else-if="a.kind === 'judgement'">
+                <div class="mt-2 rounded-md border border-border bg-muted/40 p-3">
+                  <Badge
+                    variant="outline"
+                    class="h-5 px-1.5 font-normal"
+                    :class="(a.judgement_revoked ?? 0) === 0 && (a.judgement_added ?? 0) === 0
+                      ? 'border-[var(--lg-cheater-tag)]/50 text-[var(--lg-cheater-tag)]'
+                      : ((a.judgement_revoked ?? 0) > 0 ? 'border-destructive/50 text-destructive' : 'border-emerald-500/50 text-emerald-600 dark:text-emerald-400')"
+                  >
+                    <template v-if="(a.judgement_revoked ?? 0) > 0 && (a.judgement_added ?? 0) === 0">
+                      撤销权限
+                    </template>
+                    <template v-else-if="(a.judgement_added ?? 0) > 0 && (a.judgement_revoked ?? 0) === 0">
+                      授予权限
+                    </template>
+                    <template v-else-if="(a.judgement_revoked ?? 0) === 0 && (a.judgement_added ?? 0) === 0">
+                      棕名惩罚
+                    </template>
+                    <template v-else>
+                      权限变更
+                    </template>
+                  </Badge>
+
+                  <div v-if="describePermission(a.judgement_revoked ?? 0).length" class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span class="font-medium text-destructive">● 撤销</span>
                     <span
                       v-for="p in describePermission(a.judgement_revoked ?? 0)"
                       :key="`r-${idx}-${p}`"
-                      class="perm-chip"
+                      class="rounded border border-border bg-card px-2 py-0.5"
                     >{{ p }}</span>
-                    <span class="perm-suffix">权限</span>
+                    <span class="text-muted-foreground">权限</span>
                   </div>
-                  <div v-if="describePermission(a.judgement_added ?? 0).length" class="perm-row">
-                    <span class="perm-label added">● 授予</span>
+
+                  <div v-if="describePermission(a.judgement_added ?? 0).length" class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span class="font-medium text-emerald-600 dark:text-emerald-400">● 授予</span>
                     <span
                       v-for="p in describePermission(a.judgement_added ?? 0)"
                       :key="`a-${idx}-${p}`"
-                      class="perm-chip"
+                      class="rounded border border-border bg-card px-2 py-0.5"
                     >{{ p }}</span>
-                    <span class="perm-suffix">权限</span>
+                    <span class="text-muted-foreground">权限</span>
                   </div>
 
-                  <div class="reason">{{ a.judgement_reason }}</div>
+                  <p class="mt-2 border-t border-dashed border-border pt-2 text-sm text-foreground">
+                    {{ a.judgement_reason }}
+                  </p>
                 </div>
               </template>
             </li>
           </ul>
-          <p v-else class="empty">暂无活动记录</p>
 
-          <!-- 加载更多 -->
-          <div v-if="activity && activity.length" class="loader">
-            <button v-if="!activityNoMore" :disabled="activityLoading" @click="loadMoreActivity">
-              {{ activityLoading ? '加载中...' : '加载更多' }}
-            </button>
-            <span v-else class="empty">没有更多了</span>
+          <p v-else class="mt-10 text-center text-sm text-muted-foreground">暂无活动记录</p>
+
+          <div v-if="activity && activity.length" class="mt-4 text-center">
+            <Button
+              v-if="!activityNoMore"
+              variant="outline"
+              size="sm"
+              :disabled="activityLoading"
+              @click="loadMoreActivity"
+            >
+              <Loader2 v-if="activityLoading" class="size-3.5 animate-spin" />
+              {{ activityLoading ? '加载中' : '加载更多' }}
+            </Button>
+            <p v-else class="text-xs text-muted-foreground">没有更多了</p>
           </div>
-        </section>
+        </TabsContent>
 
-        <!-- 个人介绍 -->
-        <section v-if="activeTab === 'intro'">
-          <div class="section-head">
-            <h2>个人介绍</h2>
-            <button type="button" class="section-action-btn" @click="copyIntroOriginal">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M8 8h10v12H8zM6 16H4V4h12v2"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <span>{{ copiedIntroOriginal ? '已复制' : '复制原文' }}</span>
-            </button>
+        <TabsContent value="intro" class="mt-0">
+          <div class="flex items-center justify-between border-b border-border pb-3">
+            <h2 class="text-lg font-semibold text-foreground">个人介绍</h2>
+            <Button type="button" variant="ghost" size="sm" @click="copyIntroOriginal">
+              <Check v-if="copiedIntroOriginal" class="size-3.5" />
+              <Copy v-else class="size-3.5" />
+              {{ copiedIntroOriginal ? '已复制' : '复制原文' }}
+            </Button>
           </div>
-          <article class="lg-content" v-html="introHtml" />
-        </section>
+          <article class="lg-content mt-4" v-html="introHtml" />
+        </TabsContent>
 
-        <!-- OI 获奖 -->
-        <section v-if="activeTab === 'prizes'">
-          <h2>OI 获奖</h2>
-          <table class="prize-table">
-            <thead>
-              <tr>
-                <th>年份</th>
-                <th>赛事</th>
-                <th>项目</th>
-                <th>奖项</th>
-                <th>分数</th>
-                <th>排名</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(p, idx) in profile.prizes" :key="`${idx}-${p.contest}-${p.prize}`">
-                <td>
+        <TabsContent value="prizes" class="mt-0">
+          <h2 class="mb-3 text-lg font-semibold text-foreground">OI 获奖</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>年份</TableHead>
+                <TableHead>赛事</TableHead>
+                <TableHead>项目</TableHead>
+                <TableHead>奖项</TableHead>
+                <TableHead>分数</TableHead>
+                <TableHead>排名</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="(p, idx) in profile.prizes" :key="`${idx}-${p.contest}-${p.prize}`">
+                <TableCell class="tabular-nums">
                   <template v-if="p.year && p.year > 0">{{ p.year }}</template>
-                  <span v-else class="hidden-cell">已隐藏</span>
-                </td>
-                <td>{{ p.contest }}</td>
-                <td>{{ p.event || '—' }}</td>
-                <td>{{ p.prize }}</td>
-                <!-- score/rank 都为 null：合并两格，"已隐藏"在两列范围内居中 -->
-                <td v-if="p.score === null && p.rank === null"
-                    colspan="2" class="hidden-cell hidden-merged">已隐藏</td>
+                  <span v-else class="text-xs text-muted-foreground">已隐藏</span>
+                </TableCell>
+                <TableCell>{{ p.contest }}</TableCell>
+                <TableCell>{{ p.event || '—' }}</TableCell>
+                <TableCell>{{ p.prize }}</TableCell>
+                <TableCell v-if="p.score === null && p.rank === null" colspan="2" class="text-center text-xs text-muted-foreground">
+                  已隐藏
+                </TableCell>
                 <template v-else>
-                  <td>{{ p.score !== null ? formatScore(p.score) : '—' }}</td>
-                  <td>{{ p.rank !== null ? p.rank : '—' }}</td>
+                  <TableCell class="tabular-nums">{{ p.score !== null ? formatScore(p.score) : '—' }}</TableCell>
+                  <TableCell class="tabular-nums">{{ p.rank !== null ? p.rank : '—' }}</TableCell>
                 </template>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TabsContent>
 
-        <!-- 用户名外显历史 -->
-        <section v-if="activeTab === 'names'" class="name-history-panel">
-          <header class="name-history-head">
+        <TabsContent value="names" class="mt-0">
+          <div class="flex items-end justify-between gap-4 border-b border-border pb-3">
             <div>
-              <h2>历史用户名外显</h2>
-              <p>追踪最近的用户名外显变动记录。</p>
+              <h2 class="text-lg font-semibold text-foreground">历史用户名外显</h2>
+              <p class="mt-0.5 text-xs text-muted-foreground">追踪最近的用户名外显变动记录。</p>
             </div>
-            <span>{{ nameHistory.length }} 次记录</span>
-          </header>
+            <span class="shrink-0 text-xs text-muted-foreground">{{ nameHistory.length }} 次记录</span>
+          </div>
 
-          <ol class="name-history-list">
+          <ol class="mt-4">
             <li
               v-for="(h, index) in nameHistory"
               :key="h.id"
-              :class="{ current: index === 0 }"
+              class="relative flex gap-3 pb-5"
             >
-              <span class="history-line" aria-hidden="true" />
-              <span class="history-dot" aria-hidden="true" />
-              <div class="history-content">
+              <span
+                v-if="index < nameHistory.length - 1"
+                class="absolute left-[5px] top-4 h-[calc(100%-8px)] w-px bg-border"
+                aria-hidden="true"
+              />
+              <span
+                class="mt-1 size-2.5 shrink-0 rounded-full border-2"
+                :class="index === 0 ? 'border-primary bg-primary' : 'border-border bg-card'"
+                aria-hidden="true"
+              />
+              <div class="min-w-0">
                 <LuoguUserName
                   :user="historyUser(h)"
                   :hidden="h.is_hidden"
                   show-badge
                   no-link
                 />
-                <div class="history-time">
+                <div class="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground">
                   <span :title="h.first_seen_at">
                     最早追溯到 {{ format(h.first_seen_at, 'YYYY/MM/DD') }}
                   </span>
@@ -635,566 +717,60 @@ function formatScore(s: number): string {
               </div>
             </li>
           </ol>
-        </section>
-      </main>
-    </div>
+        </TabsContent>
+      </div>
+    </Tabs>
   </div>
 </template>
 
 <style scoped>
-.user-page {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.two-col {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 32px;
-  margin-top: 16px;
-  align-items: start;
-}
-@media (max-width: 768px) {
-  .two-col { grid-template-columns: 1fr; gap: 16px; }
-}
-
-.sidebar {
-  position: sticky;
-  top: 16px;
-  align-self: start;
-}
-@media (max-width: 768px) {
-  /* 手机端：sidebar 变普通块，跟随页面向上滚出视口；tab 横向铺开 */
-  .sidebar {
-    position: static;
-    top: auto;
-  }
-}
-
-.profile-head {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px 16px;
-  text-align: center;
-  margin-bottom: 12px;
-}
-.avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-}
-.name-row {
-  margin: 10px 0 4px;
-  font-size: 20px;
-}
-.slogan {
-  color: var(--text-muted);
-  margin: 4px 0 12px;
-  font-size: 14px;
-}
-.badges {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.tag {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--hover);
-  color: var(--text-muted);
-}
-.tag.banned { background: #ffecec; color: var(--lg-red); }
-.tag.admin { background: #e9f5ff; color: var(--lg-blue); }
-
-.card-link-btn {
-  width: fit-content;
-  margin: 10px auto 0;
-  padding: 6px 16px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  font-size: 14px;
-}
-.card-link-btn:hover {
-  border-color: var(--link);
-  color: var(--link);
-  text-decoration: none;
-}
-.card-link-btn svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-}
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin: 14px 0 0;
-  text-align: left;
-}
-.stats > div {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 5px 10px;
-}
-.stats dt { font-size: 11px; color: var(--text-muted); margin: 0; }
-.stats dd { margin: 0; font-weight: 600; font-size: 14px; }
-
-.tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px;
-}
-.tabs button {
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-  border-radius: 4px;
-  font: inherit;
-}
-.tabs button:hover { background: var(--hover); }
-.tabs button.active {
-  background: var(--link);
-  color: #fff;
-}
-
-@media (max-width: 768px) {
-  /* 手机端 tab 横向铺开，便于一行选 */
-  .tabs {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .tabs button {
-    flex: 1 0 auto;
-    text-align: center;
-  }
-}
-
-.content {
-  min-width: 0;
-  width: 100%;
-}
-.content h2 { margin-top: 0; }
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.section-head h2 { margin: 0; }
-.activity-filters {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-.toggle {
-  font-size: 14px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.section-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  transition: border-color 0.15s, color 0.15s, transform 0.1s;
-}
-.section-action-btn:hover {
-  border-color: var(--link);
-  color: var(--link);
-  transform: translateY(-1px);
-}
-.section-action-btn svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-}
-
-.activity-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.activity-list li {
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-.kind-tag {
-  font-size: 11px;
-  padding: 2px 8px;
-  background: var(--hover);
-  color: var(--text-muted);
-  border-radius: 10px;
-  margin-right: 8px;
-}
-.time {
-  color: var(--text-muted);
-  font-size: 13px;
-  margin-left: 12px;
-}
-.link-line {
-  /* 文章 / 剪贴板的链接独占一行，上方留空与 feed 内容块保持一致 */
-  margin-top: 8px;
-}
-.discussion-excerpt {
-  margin: 8px 0 0;
-  color: var(--text-muted);
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-}
-.discussion-title {
-  margin: 12px 0 0;
-  font-size: 16px;
-  font-weight: 650;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.discussion-title a { color: var(--text); }
-.discussion-title a:hover { color: var(--link); }
-.discussion-context {
-  margin: 12px 0 0;
-  color: var(--text-muted);
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-}
-.discussion-quote {
-  margin: 10px 0 2px;
-  padding: 2px 0 2px 12px;
-  border-left: 3px solid var(--border);
-  color: var(--text);
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-}
-.discussion-stats { margin-top: 10px; color: var(--text-muted); font-size: 12px; }
-.name-history-panel {
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-}
-.name-history-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-}
-.name-history-head h2 {
-  margin: 0;
-  font-size: 18px;
-}
-.name-history-head p {
-  margin: 4px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.name-history-head > span {
-  flex: 0 0 auto;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-.name-history-list {
-  margin: 0;
-  padding: 8px 22px 12px;
-  list-style: none;
-}
-.name-history-list li {
-  position: relative;
-  min-height: 66px;
-  padding: 13px 0 13px 26px;
-}
-.history-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 5px;
-  width: 1px;
-  background: var(--border);
-}
-.name-history-list li:first-child .history-line {
-  top: 21px;
-}
-.name-history-list li:last-child .history-line {
-  bottom: calc(100% - 22px);
-}
-.history-dot {
-  position: absolute;
-  top: 19px;
-  left: 1px;
-  width: 9px;
-  height: 9px;
-  box-sizing: border-box;
-  border: 2px solid var(--surface);
-  border-radius: 50%;
-  background: var(--text-muted);
-  box-shadow: 0 0 0 1px var(--border);
-}
-.name-history-list li.current .history-dot {
-  background: var(--link);
-  box-shadow: 0 0 0 1px var(--link);
-}
-.history-content {
-  min-width: 0;
-}
-.history-time {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px 16px;
-  margin-top: 7px;
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.4;
-}
-.name-history-list li.current .history-time {
-  color: var(--text);
-  font-weight: 500;
-}
-@media (max-width: 520px) {
-  .name-history-head {
-    padding: 16px;
-  }
-  .name-history-head > span {
-    display: none;
-  }
-  .name-history-list {
-    padding-right: 16px;
-    padding-left: 16px;
-  }
-}
-.feed-foot {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* 自动补回内容使用淡蓝下划线，并提供与比赛页一致的悬浮说明。 */
+/* 活动正文里由 Markdown 渲染出的"自动补全"标记，结构来自 v-html，无法用工具类表达 */
 .lg-content :deep(.feed-completion-wrap) {
   position: relative;
   display: inline;
-  cursor: help;
-  outline: none;
 }
 .lg-content :deep(.feed-completion-block) {
   display: block;
-  width: fit-content;
-  max-width: 100%;
+  margin: 6px 0;
 }
 .lg-content :deep(.feed-auto-merged) {
-  text-decoration-line: underline;
-  text-decoration-color: #7db9e8;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+  border-bottom: 1px dashed var(--border);
 }
 .lg-content :deep(.feed-auto-merged img) {
-  box-shadow: 0 2px 0 #7db9e8;
+  vertical-align: middle;
+  max-width: 100%;
 }
 .lg-content :deep(.feed-auto-merged-image) {
   display: inline-block;
-  max-width: 100%;
-  box-shadow: 0 2px 0 #7db9e8;
+  position: relative;
 }
 .lg-content :deep(.feed-auto-merged-image img) {
-  display: block;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
 }
 .lg-content :deep(.feed-auto-merged-link),
 .lg-content :deep(.feed-auto-merged-link a) {
-  text-decoration-line: underline;
-  text-decoration-color: #7db9e8;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+  border-bottom: 1px dashed var(--border);
 }
 .lg-content :deep(.feed-completion-popover) {
   position: absolute;
-  z-index: 30;
-  top: calc(100% + 9px);
-  left: 50%;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 20;
   display: none;
   width: max-content;
-  max-width: 280px;
-  padding: 8px 10px;
-  transform: translateX(-50%);
+  max-width: 260px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  color: var(--text-muted);
   font-size: 12px;
-  line-height: 1.55;
-  text-align: left;
-  white-space: normal;
-  pointer-events: none;
+  line-height: 1.5;
+  box-shadow: var(--shadow-md);
 }
 .lg-content :deep(.feed-completion-wrap:hover > .feed-completion-popover),
 .lg-content :deep(.feed-completion-wrap:focus-within > .feed-completion-popover) {
   display: block;
-}
-.feed-id {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  opacity: 0.55;
-}
-
-/* 陶片放逐迷你卡片（沿用陶片页样式，但不带头像名字） */
-.judgement-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
-.judgement-card .head {
-  display: flex;
-  align-items: center;
-}
-.judgement-card .action-tag {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 4px;
-}
-.judgement-card .action-tag.revoked { color: var(--lg-red); }
-.judgement-card .action-tag.added { color: var(--lg-green); }
-.judgement-card .action-tag.cheater { color: var(--lg-cheater-tag); }
-.judgement-card .perm-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 14px;
-  padding-left: 8px;
-}
-.judgement-card .perm-label { font-weight: 500; }
-.judgement-card .perm-label.revoked { color: var(--lg-red); }
-.judgement-card .perm-label.added { color: var(--lg-green); }
-.judgement-card .perm-chip {
-  background: var(--hover);
-  border: 1px solid var(--border);
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.judgement-card .perm-suffix {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.judgement-card .reason {
-  padding-top: 6px;
-  border-top: 1px dashed var(--border);
-  color: var(--text);
-  font-size: 14px;
-}
-.empty {
-  color: var(--text-muted);
-  text-align: center;
-  padding: 40px;
-}
-.prize-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  font-size: 14px;
-}
-.prize-table th,
-.prize-table td {
-  padding: 8px 14px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-.prize-table thead {
-  background: var(--hover);
-}
-.prize-table th {
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.prize-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.prize-table tbody tr:hover {
-  background: var(--hover);
-}
-.hidden-cell {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.prize-table td.hidden-merged {
-  text-align: center;
-}
-.loader {
-  text-align: center;
-  padding: 16px 0;
-}
-.loader button {
-  padding: 8px 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--text);
-  font: inherit;
-}
-.loader button:hover:not(:disabled) {
-  border-color: var(--link);
-  color: var(--link);
-}
-.loader button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.loader .empty {
-  padding: 8px;
-}
-.error-box {
-  padding: 30px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-align: center;
 }
 </style>
