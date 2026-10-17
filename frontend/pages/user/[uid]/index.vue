@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ChartNoAxesColumn, Check, Copy, Loader2 } from '@lucide/vue'
+import { ChartNoAxesColumn, Check, Copy, ExternalLink, Loader2 } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApi()
-const { smart, format } = useTime()
+const { smart, format, fromNow } = useTime()
 const uid = route.params.uid as string
 
 interface UserNameHistoryItem {
@@ -115,90 +115,79 @@ const { data: profile, error, pending: profilePending } = useLazyAsyncData(`user
   { server: false },
 )
 
-const includeFeed = ref(true)
-const includeDiscussion = ref(true)
+// 活动分三类：全部 / 专栏（文章、剪贴板）/ 动态（犇犇）。
+// 接口只提供 include_feed 与 include_discussion，文章与剪贴板始终返回，
+// 所以专栏与动态的区分在前端做；过滤后不足一屏时继续往后翻页补齐。
+type ActivityTab = 'all' | 'column' | 'feed'
+const activeKind = ref<ActivityTab>('all')
+
+const ACTIVITY_TABS: Array<{ key: ActivityTab; label: string }> = [
+  { key: 'all', label: '活动' },
+  { key: 'column', label: '专栏' },
+  { key: 'feed', label: '动态' },
+]
+
 // 活动列表分页：游标 = 列表最后一条的 time（更老的时间）
 const activity = ref<ActivityItem[]>([])
 const activityLoading = ref(false)
 const activityNoMore = ref(false)
 const activityBefore = ref<string | null>(null)
-// 筛选变化后丢弃旧请求结果，避免快速切换开关时串入上一次筛选的数据。
+// 切换分类后丢弃旧请求结果，避免快速切换时串入上一次的数据。
 let activityRequestVersion = 0
 const PAGE_SIZE = 50
+const ACTIVITY_MIN_ROWS = 10
 
-// 活动第一页同样懒加载，避免用户资料页等待活动接口。
-const { data: firstPage, pending: activityInitialPending } = useLazyAsyncData(
-  `user-activity-${uid}`,
-  () =>
-    api<ActivityItem[]>(`/user/${uid}/activity`, {
-      query: {
-        include_feed: includeFeed.value,
-        include_discussion: includeDiscussion.value,
-        limit: PAGE_SIZE,
-      },
-    }),
-  { server: false },
-)
+function matchesTab(item: ActivityItem, tab: ActivityTab) {
+  if (tab === 'all') return true
+  if (tab === 'column') return item.kind === 'article' || item.kind === 'paste'
+  return item.kind === 'feed'
+}
 
-watch(firstPage, (page) => {
-  if (!page || activityRequestVersion !== 0) return
-  activity.value = [...page]
-  activityBefore.value = page.length ? page[page.length - 1].time : null
-  activityNoMore.value = page.length < PAGE_SIZE
-}, { immediate: true })
-
-async function loadMoreActivity() {
-  if (activityLoading.value || activityInitialPending.value || activityNoMore.value) return
-  const requestVersion = activityRequestVersion
+async function fetchActivity(reset: boolean) {
+  const tab = activeKind.value
+  const version = ++activityRequestVersion
+  if (reset) {
+    activity.value = []
+    activityBefore.value = null
+    activityNoMore.value = false
+  }
   activityLoading.value = true
   try {
-    const q: Record<string, any> = {
-      include_feed: includeFeed.value ? 'true' : 'false',
-      include_discussion: includeDiscussion.value,
-      limit: PAGE_SIZE,
-    }
-    if (activityBefore.value) q.before = activityBefore.value
-    const page = await api<ActivityItem[]>(`/user/${uid}/activity`, { query: q })
-    if (requestVersion !== activityRequestVersion) return
-    if (page.length === 0) {
-      activityNoMore.value = true
-    } else {
-      activity.value.push(...page)
+    for (let round = 0; round < 4; round++) {
+      const query: Record<string, any> = {
+        include_feed: tab !== 'column',
+        include_discussion: tab === 'all',
+        limit: PAGE_SIZE,
+      }
+      if (activityBefore.value) query.before = activityBefore.value
+
+      const page = await api<ActivityItem[]>(`/user/${uid}/activity`, { query })
+      if (version !== activityRequestVersion) return
+
+      if (!page.length) {
+        activityNoMore.value = true
+        break
+      }
       activityBefore.value = page[page.length - 1].time
       if (page.length < PAGE_SIZE) activityNoMore.value = true
+
+      activity.value.push(...page.filter(item => matchesTab(item, tab)))
+      if (activity.value.length >= ACTIVITY_MIN_ROWS || activityNoMore.value) break
     }
   } finally {
-    if (requestVersion === activityRequestVersion) activityLoading.value = false
+    if (version === activityRequestVersion) activityLoading.value = false
   }
 }
 
-// 两种活动独立筛选；切换后重新分页，避免隐藏内容占用返回条数。
-watch([includeFeed, includeDiscussion], async () => {
-  const requestVersion = ++activityRequestVersion
-  activity.value = []
-  activityBefore.value = null
-  activityNoMore.value = false
-  activityLoading.value = true
-  try {
-    const page = await api<ActivityItem[]>(`/user/${uid}/activity`, {
-      query: {
-        include_feed: includeFeed.value,
-        include_discussion: includeDiscussion.value,
-        limit: PAGE_SIZE,
-      },
-    })
-    if (requestVersion !== activityRequestVersion) return
-    activity.value = page
-    if (page.length === 0) {
-      activityNoMore.value = true
-    } else {
-      activityBefore.value = page[page.length - 1].time
-      if (page.length < PAGE_SIZE) activityNoMore.value = true
-    }
-  } finally {
-    if (requestVersion === activityRequestVersion) activityLoading.value = false
-  }
-})
+const activityInitialPending = computed(() => activityLoading.value && activity.value.length === 0)
+
+function loadMoreActivity() {
+  if (activityLoading.value || activityNoMore.value) return
+  void fetchActivity(false)
+}
+
+watch(activeKind, () => { void fetchActivity(true) })
+onMounted(() => { if (!activity.value.length) void fetchActivity(true) })
 
 const { render } = useMarkdown()
 const introHtml = computed(() =>
@@ -397,14 +386,6 @@ function formatScore(s: number): string {
   </Card>
 
   <div v-else-if="profile" class="space-y-4">
-    <OriginBanner
-      :origin-url="`https://www.luogu.com.cn/user/${uid}`"
-      compact
-      :crawled-at="profile.last_crawled_at"
-      content-type="user"
-      :content-id="String(uid)"
-    />
-
     <Tabs
       v-model="activeTab"
       orientation="vertical"
@@ -434,22 +415,41 @@ function formatScore(s: number): string {
               </Badge>
             </div>
 
-            <div class="mt-4 flex w-full items-center gap-2">
-              <FollowButton :uid="profile.uid" class="flex-1" />
-              <Button variant="outline" size="sm" as-child>
-                <NuxtLink :to="`/user/${profile.uid}/card`">
-                  <ChartNoAxesColumn class="size-3.5" />
-                  图卡
-                </NuxtLink>
-              </Button>
-            </div>
-
             <dl class="mt-4 flex w-full divide-x divide-border overflow-hidden rounded-md border border-border">
               <div v-for="s in stats" :key="s.label" class="flex-1 px-1 py-2.5">
                 <dt class="text-[11px] leading-tight text-muted-foreground">{{ s.label }}</dt>
                 <dd class="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{{ s.value }}</dd>
               </div>
             </dl>
+
+            <div class="mt-4 grid w-full grid-cols-2 gap-2">
+              <FollowButton :uid="profile.uid" class="col-span-2 w-full" />
+              <Button variant="outline" size="sm" as-child class="w-full">
+                <NuxtLink :to="`/user/${profile.uid}/card`">
+                  <ChartNoAxesColumn class="size-3.5" />
+                  图卡
+                </NuxtLink>
+              </Button>
+              <Button variant="outline" size="sm" as-child class="w-full">
+                <a
+                  :href="`https://www.luogu.com.cn/user/${uid}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink class="size-3.5" />
+                  查看源站
+                </a>
+              </Button>
+              <SaveButton
+                content-type="user"
+                :content-id="String(uid)"
+                class="col-span-2 w-full"
+              />
+            </div>
+
+            <p v-if="profile.last_crawled_at" class="mt-3 text-[11px] text-muted-foreground">
+              上次更新 {{ fromNow(profile.last_crawled_at) }}
+            </p>
           </div>
         </Card>
 
@@ -468,20 +468,24 @@ function formatScore(s: number): string {
       <div ref="contentRef" class="min-w-0">
         <TabsContent value="activity" class="mt-0">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-            <h2 class="text-lg font-semibold text-foreground">活动</h2>
-            <div class="flex flex-wrap items-center gap-4">
-              <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                <Checkbox v-model="includeFeed" />
-                显示犇犇
-              </label>
-              <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                <Checkbox v-model="includeDiscussion" />
-                显示讨论
-              </label>
-            </div>
+            <Tabs v-model="activeKind" class="w-auto">
+              <TabsList class="h-8">
+                <TabsTrigger
+                  v-for="t in ACTIVITY_TABS"
+                  :key="t.key"
+                  :value="t.key"
+                  class="h-7 flex-none px-2.5 text-xs"
+                >
+                  {{ t.label }}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <span v-if="activity.length" class="text-xs text-muted-foreground">
+              已加载 {{ activity.length }} 条
+            </span>
           </div>
 
-          <div v-if="activityInitialPending && !activity.length" class="mt-4 space-y-3">
+          <div v-if="activityInitialPending" class="mt-4 space-y-3">
             <Skeleton v-for="i in 5" :key="i" class="h-20 rounded-lg" />
           </div>
 
