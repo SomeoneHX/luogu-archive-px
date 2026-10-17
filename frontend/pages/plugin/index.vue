@@ -53,8 +53,12 @@ const activeTagName = computed(() => {
 })
 
 const hasFilters = computed(() => Object.values(filters).some(Boolean))
-// 窄屏下五个下拉会把首屏占满，默认收起，桌面端始终展开。
+// 五个下拉默认收起，避免筛选区把列表推到首屏之外。
 const filtersOpen = ref(false)
+const DROPDOWN_FILTER_KEYS = ['request_level', 'runtime_mode', 'device', 'badge', 'updated_days'] as const
+const dropdownFilterCount = computed(
+  () => DROPDOWN_FILTER_KEYS.filter(key => filters[key]).length,
+)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 function displaySummary(value: unknown) {
@@ -180,20 +184,27 @@ useHead({ title: '插件广场 - 洛谷档案馆' })
 
           <button
             type="button"
-            class="mt-4 flex w-full items-center justify-between border-t border-border pt-4 text-xs font-medium text-muted-foreground lg:hidden"
+            class="mt-4 flex w-full items-center gap-2 border-t border-border pt-4 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             :aria-expanded="filtersOpen"
             @click="filtersOpen = !filtersOpen"
           >
-            详细筛选
+            <span>详细筛选</span>
+            <Badge
+              v-if="dropdownFilterCount"
+              variant="secondary"
+              class="h-4 min-w-4 px-1 text-[10px] font-normal tabular-nums"
+            >
+              {{ dropdownFilterCount }}
+            </Badge>
             <ChevronDown
-              class="size-4 transition-transform"
+              class="ml-auto size-4 transition-transform"
               :class="filtersOpen ? 'rotate-180' : ''"
             />
           </button>
 
           <div
-            class="mt-3 space-y-3 lg:mt-4 lg:border-t lg:border-border lg:pt-4"
-            :class="filtersOpen ? '' : 'hidden lg:block'"
+            class="mt-3 space-y-3"
+            :class="filtersOpen ? '' : 'hidden'"
           >
             <div class="space-y-1.5">
               <Label class="text-xs font-normal text-muted-foreground">请求等级</Label>
@@ -269,11 +280,11 @@ useHead({ title: '插件广场 - 洛谷档案馆' })
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div class="mt-4 flex flex-col gap-2">
-            <Button size="sm" @click="applyFilters">应用筛选</Button>
-            <Button v-if="hasFilters" variant="outline" size="sm" @click="resetFilters">清除筛选</Button>
+            <div class="flex flex-col gap-2 pt-1">
+              <Button size="sm" @click="applyFilters">应用筛选</Button>
+              <Button v-if="hasFilters" variant="outline" size="sm" @click="resetFilters">清除筛选</Button>
+            </div>
           </div>
         </div>
       </Card>
