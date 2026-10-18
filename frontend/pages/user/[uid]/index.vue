@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpRight, ChartNoAxesColumn, Check, Copy, ExternalLink, Loader2 } from '@lucide/vue'
+import { ArrowUpRight, ChartNoAxesColumn, Check, Copy, ExternalLink } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApi()
@@ -187,6 +187,21 @@ function loadMoreActivity() {
   if (activityLoading.value || activityNoMore.value) return
   void fetchActivity(false)
 }
+
+// 滚动到底自动加载下一页；切 tab 时 sentinel 随内容重建，watch 会重新绑定
+const activitySentinel = ref<HTMLElement | null>(null)
+let activityObserver: IntersectionObserver | null = null
+
+watch(activitySentinel, (el) => {
+  activityObserver?.disconnect()
+  if (!el) return
+  activityObserver = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting)) loadMoreActivity()
+  }, { rootMargin: '240px 0px' })
+  activityObserver.observe(el)
+})
+
+onBeforeUnmount(() => activityObserver?.disconnect())
 
 watch(activeKind, () => { void fetchActivity(true) })
 onMounted(() => { if (!activity.value.length) void fetchActivity(true) })
@@ -574,18 +589,10 @@ function formatScore(s: number): string {
 
           <p v-else class="mt-10 text-center text-sm text-muted-foreground">暂无活动记录</p>
 
-          <div v-if="activity && activity.length" class="mt-4 text-center">
-            <Button
-              v-if="!activityNoMore"
-              variant="outline"
-              size="sm"
-              :disabled="activityLoading"
-              @click="loadMoreActivity"
-            >
-              <Loader2 v-if="activityLoading" class="size-3.5 animate-spin" />
-              {{ activityLoading ? '加载中' : '加载更多' }}
-            </Button>
-            <p v-else class="text-xs text-muted-foreground">没有更多了</p>
+          <div v-if="activity && activity.length" class="mt-4 py-2 text-center">
+            <span v-if="activityLoading" class="text-sm text-muted-foreground">加载中…</span>
+            <p v-else-if="activityNoMore" class="text-xs text-muted-foreground">没有更多了</p>
+            <span v-else ref="activitySentinel" />
           </div>
         </TabsContent>
 

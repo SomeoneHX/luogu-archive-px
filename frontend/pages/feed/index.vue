@@ -47,9 +47,32 @@ async function loadMore() {
     } else {
       beforeTs.value = page[page.length - 1].time
     }
+  } catch {
+    failed.value = true
   } finally {
     loading.value = false
   }
+}
+
+// 滚动到底自动加载下一页
+const sentinel = ref<HTMLElement | null>(null)
+const failed = ref(false)
+let observer: IntersectionObserver | null = null
+
+watch(sentinel, (el) => {
+  observer?.disconnect()
+  if (!el) return
+  observer = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting)) loadMore()
+  }, { rootMargin: '240px 0px' })
+  observer.observe(el)
+})
+
+onBeforeUnmount(() => observer?.disconnect())
+
+function retry() {
+  failed.value = false
+  loadMore()
 }
 
 const { feedHtml } = useFeedContent()
@@ -112,11 +135,11 @@ useCopyCode(listRef)
         还没有抓到任何犇犇
       </div>
 
-      <div class="mt-5 flex justify-center">
-        <Button v-if="!noMore" variant="outline" :disabled="loading" @click="loadMore">
-          {{ loading ? '加载中…' : '加载更多' }}
-        </Button>
-        <span v-else-if="items.length" class="text-xs text-muted-foreground">没有更多了</span>
+      <div class="mt-5 flex justify-center py-2">
+        <Button v-if="failed" variant="outline" size="sm" @click="retry">加载失败，点击重试</Button>
+        <span v-else-if="loading" class="text-sm text-muted-foreground">加载中…</span>
+        <span v-else-if="items.length && noMore" class="text-xs text-muted-foreground">没有更多了</span>
+        <span v-else ref="sentinel" />
       </div>
     </template>
   </div>
