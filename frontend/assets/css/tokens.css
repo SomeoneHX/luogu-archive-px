@@ -18,15 +18,9 @@
 
   --banner-bg: #fff8e1;
   --banner-border: #f0c040;
-  --article-banner-bg: var(--card);
 
   --page-max-width: 1180px;
   --page-gutter: 40px;
-
-  --hero-bg: var(--card);
-  --hero-border: var(--border);
-  --hero-text: var(--text);
-  --hero-text-muted: var(--text-muted);
 
   /* 洛谷难度 / 用户颜色（沿用官方色值） */
   --lg-gray: #bfbfbf;

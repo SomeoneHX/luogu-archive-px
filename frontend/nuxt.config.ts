@@ -49,7 +49,6 @@ export default defineNuxtConfig({
     'katex/dist/katex.min.css',
     '~/assets/css/tokens.css',
     '~/assets/css/content.css',
-    '~/assets/css/legacy.css',
   ],
   routeRules: {
     // 只在 dev 生效：浏览器端请求 /api/** 由 Nitro 转发到线上，避免 CORS。
