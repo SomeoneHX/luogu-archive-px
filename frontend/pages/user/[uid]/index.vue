@@ -195,59 +195,7 @@ const { render } = useMarkdown()
 const introHtml = computed(() =>
   profile.value?.introduction_md ? render(profile.value.introduction_md) : '',
 )
-const completionTip = '此内容由洛谷档案馆根据回复链自动补全'
-
-function markMergedMedia(html: string, links: string[], images: string[]) {
-  let marked = html
-  for (const link of links) {
-    const anchor = render(link).match(/<a\b[^>]*>[\s\S]*?<\/a>/i)?.[0]
-    if (!anchor || !marked.includes(anchor)) continue
-    marked = marked.replace(
-      anchor,
-      `<span class="feed-completion-wrap" tabindex="0"><span class="feed-auto-merged-link">${anchor}</span><span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`,
-    )
-  }
-  for (const imageMd of images) {
-    const image = render(imageMd).match(/<img\b[^>]*>/i)?.[0]
-    if (!image || !marked.includes(image)) continue
-    marked = marked.replace(
-      image,
-      `<span class="feed-completion-wrap feed-auto-merged-image" tabindex="0">${image}<span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`,
-    )
-  }
-  return marked
-}
-
-function renderMergedSuffix(content: string, mergedSuffix: string) {
-  const prefix = content.slice(0, Math.max(0, content.length - mergedSuffix.length))
-  const prefixHtml = render(prefix)
-  const suffixHtml = render(mergedSuffix)
-  const suffixParagraph = suffixHtml.match(/^<p>([\s\S]*)<\/p>\s*$/)
-
-  // 普通文字尾巴接回原段落；只有原 Markdown 明确换行或包含多个块时才另起一行。
-  if (!mergedSuffix.startsWith('\n') && suffixParagraph && /<\/p>\s*$/.test(prefixHtml)) {
-    const markedSuffix = `<span class="feed-completion-wrap" tabindex="0"><span class="feed-auto-merged">${suffixParagraph[1]}</span><span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`
-    return prefixHtml.replace(/<\/p>\s*$/, `${markedSuffix}</p>`)
-  }
-
-  return prefixHtml
-    + `<div class="feed-completion-wrap feed-completion-block" tabindex="0"><div class="feed-auto-merged">${suffixHtml}</div><span class="feed-completion-popover" role="tooltip">${completionTip}</span></div>`
-}
-
-function feedHtml(
-  content: string,
-  mergedSuffix?: string | null,
-  mergedLinks: string[] = [],
-  mergedImages: string[] = [],
-) {
-  let html = mergedSuffix
-    ? renderMergedSuffix(content, mergedSuffix)
-    : render(content)
-  if (mergedLinks.length || mergedImages.length) {
-    html = markMergedMedia(html, mergedLinks, mergedImages)
-  }
-  return html
-}
+const { feedHtml } = useFeedContent()
 
 const copiedIntroOriginal = ref(false)
 async function copyIntroOriginal() {
@@ -735,55 +683,3 @@ function formatScore(s: number): string {
     </Tabs>
   </div>
 </template>
-
-<style scoped>
-/* 活动正文里由 Markdown 渲染出的"自动补全"标记，结构来自 v-html，无法用工具类表达 */
-.lg-content :deep(.feed-completion-wrap) {
-  position: relative;
-  display: inline;
-}
-.lg-content :deep(.feed-completion-block) {
-  display: block;
-  margin: 6px 0;
-}
-.lg-content :deep(.feed-auto-merged) {
-  border-bottom: 1px dashed var(--border);
-}
-.lg-content :deep(.feed-auto-merged img) {
-  vertical-align: middle;
-  max-width: 100%;
-}
-.lg-content :deep(.feed-auto-merged-image) {
-  display: inline-block;
-  position: relative;
-}
-.lg-content :deep(.feed-auto-merged-image img) {
-  border: 1px dashed var(--border);
-  border-radius: 4px;
-}
-.lg-content :deep(.feed-auto-merged-link),
-.lg-content :deep(.feed-auto-merged-link a) {
-  border-bottom: 1px dashed var(--border);
-}
-.lg-content :deep(.feed-completion-popover) {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 6px);
-  z-index: 20;
-  display: none;
-  width: max-content;
-  max-width: 260px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  box-shadow: var(--shadow-md);
-}
-.lg-content :deep(.feed-completion-wrap:hover > .feed-completion-popover),
-.lg-content :deep(.feed-completion-wrap:focus-within > .feed-completion-popover) {
-  display: block;
-}
-</style>
