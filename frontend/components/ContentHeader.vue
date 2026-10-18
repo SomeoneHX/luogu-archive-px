@@ -55,12 +55,12 @@ async function copyMarkdown() {
       <span class="text-xs">{{ dateLabel }} · {{ crawledAt }}</span>
 
       <NuxtLink
-        v-if="versionCount && versionCount > 1 && historyTo"
+        v-if="historyTo"
         :to="historyTo"
         class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
       >
         <History class="size-3.5" />
-        {{ versionCount }} 个历史版本
+        {{ versionCount && versionCount > 1 ? `${versionCount} 个历史版本` : '历史版本' }}
       </NuxtLink>
     </div>
 
