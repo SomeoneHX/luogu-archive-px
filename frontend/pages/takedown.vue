@@ -90,63 +90,124 @@ async function submit() {
     message.value = e?.data?.message || '提交失败'
   }
 }
+
+const probeCls = computed(() => {
+  if (!probe.value || probe.value.target_type === 'user') {
+    return 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]'
+  }
+  if (probe.value.accessible && !probe.value.is_owner) {
+    return 'border-[var(--lg-red)] bg-[color-mix(in_srgb,var(--lg-red)_8%,var(--card))]'
+  }
+  return 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]'
+})
 </script>
 
 <template>
-  <div class="wrap">
-    <PageHero title="内容删除申请" subtitle="对已无法在原站访问的存档内容申请停止公开展示。" />
-    <div v-if="state === 'success'" class="success"><h2>申请处理完成</h2><p>{{ message }}</p></div>
-    <form v-else @submit.prevent="submit">
-      <label class="address-field">
-        <span>内容地址</span>
-        <input v-model.trim="form.target_url" type="url"
-          placeholder="粘贴用户主页、文章、剪贴板、犇犇或讨论的完整地址" maxlength="1024">
-        <small>系统会自动识别内容类型</small>
-        <span v-if="probe?.target_type && probe?.target_id" class="recognized">
+  <div class="mx-auto w-full max-w-[860px]">
+    <!-- 页面头：裸排 + border-b -->
+    <header class="border-b border-border pb-4">
+      <p class="text-xs font-medium tracking-wide text-muted-foreground">自助服务</p>
+      <h1 class="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">内容删除申请</h1>
+      <p class="mt-1 text-sm text-muted-foreground">对已无法在原站访问的存档内容申请停止公开展示。</p>
+    </header>
+
+    <!-- 提交成功 -->
+    <div
+      v-if="state === 'success'"
+      class="mt-5 rounded-xl border border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))] p-10 text-center"
+    >
+      <h2 class="text-lg font-semibold text-[var(--lg-green)]">申请处理完成</h2>
+      <p class="mt-1 text-sm text-muted-foreground">{{ message }}</p>
+    </div>
+
+    <form v-else class="mt-5" @submit.prevent="submit">
+      <!-- 内容地址 -->
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold" for="td-url">内容地址</label>
+        <Input
+          id="td-url"
+          v-model.trim="form.target_url"
+          type="url"
+          placeholder="粘贴用户主页、文章、剪贴板、犇犇或讨论的完整地址"
+          maxlength="1024"
+          class="h-12 text-base"
+        />
+        <small class="mt-1.5 block text-xs text-muted-foreground">系统会自动识别内容类型</small>
+        <span v-if="probe?.target_type && probe?.target_id" class="mt-2 block text-sm font-semibold">
           识别到：{{ typeNames[probe.target_type] || probe.target_type }}：{{ probe.target_id }}
         </span>
-      </label>
-
-      <div v-if="probing" class="probe neutral">loading……</div>
-      <div v-else-if="probe && probe.target_type !== 'user'"
-        class="probe" :class="probe.accessible && !probe.is_owner ? 'blocked' : 'allowed'">
-        <strong>{{ probe.accessible ? '可访问' : '不可访问' }}</strong>
-        <span>{{ probe.accessible ? (probe.is_owner ? '已匹配作者身份，可以申请停止公开展示。' : '原内容仍可访问，暂不能提交申请。') : '可以提交删除申请。' }}</span>
-      </div>
-      <div v-else-if="probe" class="probe allowed">
-        <strong>地址有效</strong><span>用户主页申请无需检查原站访问状态。</span>
       </div>
 
+      <!-- 探测结果 -->
+      <div v-if="probing" class="mt-4 rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
+        检查中……
+      </div>
+      <div
+        v-else-if="probe && probe.target_type !== 'user'"
+        class="mt-4 flex flex-col items-start gap-1 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
+        :class="probeCls"
+      >
+        <strong class="text-sm">{{ probe.accessible ? '可访问' : '不可访问' }}</strong>
+        <span class="text-sm text-muted-foreground">
+          {{ probe.accessible ? (probe.is_owner ? '已匹配作者身份，可以申请停止公开展示。' : '原内容仍可访问，暂不能提交申请。') : '可以提交删除申请。' }}
+        </span>
+      </div>
+      <div v-else-if="probe" class="mt-4 flex items-center gap-3 rounded-lg border border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))] px-4 py-3">
+        <strong class="text-sm">地址有效</strong>
+        <span class="text-sm text-muted-foreground">用户主页申请无需检查原站访问状态。</span>
+      </div>
+
+      <!-- 申请表单 -->
       <template v-if="probe?.can_submit">
-        <div v-if="probe.is_owner" class="owner-note">已匹配绑定的洛谷 UID，提交后将自动停止公开展示。</div>
+        <div
+          v-if="probe.is_owner"
+          class="mt-4 rounded-lg border border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))] px-4 py-3 text-sm text-muted-foreground"
+        >
+          已匹配绑定的洛谷 UID，提交后将自动停止公开展示。
+        </div>
         <template v-else>
-          <div class="target-grid">
-            <label><span>你的称呼（选填）</span><input v-model="form.requester_name" maxlength="128"></label>
-            <label><span>联系邮箱（选填）</span><input
-              v-model.trim="form.requester_email" type="email" autocomplete="email" maxlength="254"></label>
+          <div class="mt-5 grid gap-x-4 gap-y-0 sm:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold" for="td-name">你的称呼（选填）</label>
+              <Input id="td-name" v-model="form.requester_name" maxlength="128" class="h-10" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold" for="td-email">联系邮箱（选填）</label>
+              <Input
+                id="td-email"
+                v-model.trim="form.requester_email"
+                type="email"
+                autocomplete="email"
+                maxlength="254"
+                class="h-10"
+              />
+            </div>
           </div>
-          <label><span>申请理由</span><textarea v-model="form.reason" rows="6" maxlength="5000"
-            placeholder="请说明内容关系及停止公开展示的理由" /></label>
-          <p class="self-service-note">
-            自己的内容？<NuxtLink to="/login">登录</NuxtLink>或<NuxtLink to="/register">注册</NuxtLink>并在<NuxtLink to="/me">个人中心绑定洛谷账号</NuxtLink>后，可无条件自动删除。
+          <div class="mt-4">
+            <label class="mb-1.5 block text-sm font-semibold" for="td-reason">申请理由</label>
+            <Textarea
+              id="td-reason"
+              v-model="form.reason"
+              rows="6"
+              maxlength="5000"
+              placeholder="请说明内容关系及停止公开展示的理由"
+              class="min-h-32"
+            />
+          </div>
+          <p class="mt-3 text-sm text-muted-foreground">
+            自己的内容？<NuxtLink to="/login" class="font-medium text-foreground underline-offset-2 hover:underline">登录</NuxtLink>或<NuxtLink to="/register" class="font-medium text-foreground underline-offset-2 hover:underline">注册</NuxtLink>并在<NuxtLink to="/me" class="font-medium text-foreground underline-offset-2 hover:underline">个人中心绑定洛谷账号</NuxtLink>后，可无条件自动删除。
           </p>
         </template>
       </template>
-      <button type="submit" :disabled="!probe?.can_submit || state === 'submitting'">
-        {{ state === 'submitting' ? 'loading……' : '提交申请' }}
-      </button>
-      <p v-if="message" class="err">{{ message }}</p>
+
+      <Button
+        type="submit"
+        class="mt-5 px-6"
+        :disabled="!probe?.can_submit || state === 'submitting'"
+      >
+        {{ state === 'submitting' ? '提交中……' : '提交申请' }}
+      </Button>
+      <p v-if="message" class="mt-2 text-sm text-[var(--lg-red)]">{{ message }}</p>
     </form>
   </div>
 </template>
-
-<style scoped>
-.wrap{max-width:860px;margin:0 auto}form{padding:24px 0}.target-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.target-grid>label:only-child{grid-column:1/-1}
-label{display:block;margin:14px 0}label span{display:block;font-weight:600;margin-bottom:7px}input,select,textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font:inherit}
-.address-field{margin:8px 0 20px}.address-field input{min-height:58px;padding:14px 16px;font-size:17px}.address-field small{display:block;margin-top:7px;color:var(--text-muted)}
-.address-field .recognized{display:block;margin-top:10px;color:var(--text);font-weight:600}
-.probe,.owner-note{display:flex;align-items:center;gap:14px;margin:18px 0;padding:14px 16px;border:1px solid var(--border);border-radius:6px}.probe.allowed,.owner-note{border-color:var(--lg-green);background:color-mix(in srgb,var(--lg-green) 9%,var(--surface))}.probe.blocked{border-color:var(--lg-red);background:color-mix(in srgb,var(--lg-red) 8%,var(--surface))}.neutral{color:var(--text-muted)}
-.self-service-note{margin:18px 0 10px;color:var(--text-muted);font-size:14px}
-button{padding:10px 24px;border:0;border-radius:6px;background:var(--link);color:#fff;font:inherit;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}.err{color:var(--lg-red)}.success{padding:36px;border:1px solid var(--lg-green);text-align:center}.success h2{color:var(--lg-green)}
-@media(max-width:700px){.target-grid{grid-template-columns:1fr;gap:0}.probe{align-items:flex-start;flex-direction:column;gap:4px}}
-</style>
