@@ -108,6 +108,9 @@ const probeState = computed(() => {
       : 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]',
   }
 })
+
+useHead({ title: '内容删除申请 - 洛谷档案馆' })
+
 </script>
 
 <template>

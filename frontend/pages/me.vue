@@ -36,6 +36,9 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+useHead({ title: '个人中心 - 洛谷档案馆' })
+
 </script>
 
 <template>

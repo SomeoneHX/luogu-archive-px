@@ -93,6 +93,9 @@ async function resend() {
 onUnmounted(() => {
   if (cooldownTimer) clearInterval(cooldownTimer)
 })
+
+useHead({ title: '登录 - 洛谷档案馆' })
+
 </script>
 
 <template>

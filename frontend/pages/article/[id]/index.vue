@@ -78,6 +78,8 @@ async function copyOriginal() {
   } catch {}
 }
 onBeforeUnmount(() => clearTimeout(copyTimer))
+useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '文章 - 洛谷档案馆' }))
+
 </script>
 
 <template>

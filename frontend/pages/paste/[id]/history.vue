@@ -21,6 +21,8 @@ const { data, error, pending } = useLazyAsyncData(`paste-history-${id}`, () =>
   api<PasteHistoryResp>(`/paste/${id}/history`),
   { server: false },
 )
+useHead(() => ({ title: '剪贴板历史版本 - 洛谷档案馆' }))
+
 </script>
 
 <template>

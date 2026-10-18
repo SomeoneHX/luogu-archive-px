@@ -76,6 +76,8 @@ async function copyOriginal() {
   } catch {}
 }
 onBeforeUnmount(() => clearTimeout(copyTimer))
+useHead(() => ({ title: data.value ? `${data.value.author?.name ?? '未知用户'} 的剪贴板 - 洛谷档案馆` : '剪贴板 - 洛谷档案馆' }))
+
 </script>
 
 <template>

@@ -46,6 +46,9 @@ function statusCls(s: string) {
   if (s === '不计等级分') return 'text-muted-foreground'
   return 'text-[var(--lg-orange)]'
 }
+
+useHead({ title: '比赛 - 洛谷档案馆' })
+
 </script>
 
 <template>

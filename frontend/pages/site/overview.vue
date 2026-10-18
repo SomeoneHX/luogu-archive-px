@@ -131,6 +131,9 @@ function statusLabel(status: string): string {
   }
   return map[status] || status
 }
+
+useHead({ title: '站点概览 - 洛谷档案馆' })
+
 </script>
 
 <template>

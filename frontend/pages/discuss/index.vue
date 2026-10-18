@@ -104,6 +104,9 @@ function chooseForum(slug: string) {
   selectedForum.value = slug
   page.value = 1
 }
+
+useHead({ title: '讨论区 - 洛谷档案馆' })
+
 </script>
 
 <template>

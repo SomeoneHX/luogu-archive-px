@@ -58,6 +58,9 @@ const onSubmit = handleSubmit(async (formValues) => {
     captchaRef.value?.reset?.()
   }
 })
+
+useHead({ title: '注册 - 洛谷档案馆' })
+
 </script>
 
 <template>

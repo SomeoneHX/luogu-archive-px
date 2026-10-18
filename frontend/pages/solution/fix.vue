@@ -257,6 +257,9 @@ function buildDiff(leftText: string, rightText: string): DiffRow[] {
   }
   return rows
 }
+
+useHead({ title: '题解修 - 洛谷档案馆' })
+
 </script>
 
 <template>

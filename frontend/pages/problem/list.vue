@@ -168,6 +168,9 @@ function previewFor(k: string): ProblemItem[] {
 function totalFor(k: string): number {
   return data.value?.[k]?.total || 0
 }
+
+useHead({ title: '题目库 - 洛谷档案馆' })
+
 </script>
 
 <template>

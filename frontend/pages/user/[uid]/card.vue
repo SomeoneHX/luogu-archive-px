@@ -39,6 +39,8 @@ const pageTitle = computed(() => {
   return name ? `${name} 的图卡` : '图卡预览'
 })
 
+useHead(() => ({ title: `${pageTitle.value.replace(' 的图卡', ' 图卡')} - 洛谷档案馆` }))
+
 const cardPath = computed(() => `/api/v1/image/feed/${selected.value}/${uid}.svg`)
 const imageUrl = computed(() => {
   if (!import.meta.client) return cardPath.value

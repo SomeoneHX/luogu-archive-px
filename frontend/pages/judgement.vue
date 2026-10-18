@@ -142,6 +142,9 @@ function actionTag(g: JudgementGroup) {
   if (g.revoked_permission === 0 && g.added_permission === 0) return { text: '棕名惩罚', cls: 'text-[var(--lg-cheater-tag)]' }
   return { text: '权限变更', cls: 'text-muted-foreground' }
 }
+
+useHead({ title: '陶片放逐 - 洛谷档案馆' })
+
 </script>
 
 <template>

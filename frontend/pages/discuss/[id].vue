@@ -76,6 +76,8 @@ function goPage(page: number) {
   if (page < 1 || page === currentPage.value) return
   navigateTo({ path: route.path, query: page === 1 ? {} : { page } })
 }
+useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '讨论 - 洛谷档案馆' }))
+
 </script>
 
 <template>

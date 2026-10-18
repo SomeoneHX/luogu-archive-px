@@ -88,7 +88,7 @@ const { data, pending, error, refresh } = useLazyAsyncData(
   { server: false, watch: [contestId, page, appliedKeyword] },
 )
 
-useHead(() => ({ title: data.value?.contest.name || '比赛' }))
+useHead(() => ({ title: data.value ? `${data.value.contest.name} - 洛谷档案馆` : '比赛 - 洛谷档案馆' }))
 
 const totalPages = computed(() => Math.max(1, Math.ceil((data.value?.total || 0) / 50)))
 const ratingTitle = computed(() =>

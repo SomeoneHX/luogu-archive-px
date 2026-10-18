@@ -28,6 +28,9 @@ onMounted(async () => {
     message.value = e?.data?.message || '验证失败，链接可能已失效'
   }
 })
+
+useHead({ title: '邮箱验证 - 洛谷档案馆' })
+
 </script>
 
 <template>

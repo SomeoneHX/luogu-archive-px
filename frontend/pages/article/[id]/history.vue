@@ -22,6 +22,8 @@ const { data, error, pending } = useLazyAsyncData(`article-history-${id}`, () =>
   api<ArticleHistoryResp>(`/article/${id}/history`),
   { server: false },
 )
+useHead(() => ({ title: data.value ? `${data.value.title} 历史版本 - 洛谷档案馆` : '历史版本 - 洛谷档案馆' }))
+
 </script>
 
 <template>

@@ -79,6 +79,9 @@ const { feedHtml } = useFeedContent()
 
 const listRef = ref<HTMLElement | null>(null)
 useCopyCode(listRef)
+
+useHead({ title: '伪全网犇 - 洛谷档案馆' })
+
 </script>
 
 <template>

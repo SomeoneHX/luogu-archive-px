@@ -16,6 +16,16 @@ const api = useApi()
 const { smart } = useTime()
 const { feedHtml } = useFeedContent()
 
+const contentRef = ref<HTMLElement | null>(null)
+
+const { data: feed, pending, error } = useLazyAsyncData(
+  `feed-${route.params.id}`,
+  () => api<FeedItem>(`/feed/${route.params.id}`),
+  { server: false },
+)
+
+useHead(() => ({ title: feed.value?.user?.name ? `${feed.value.user.name} - 洛谷档案馆` : '犇犇 - 洛谷档案馆' }))
+
 useCopyCode(contentRef)
 </script>
 

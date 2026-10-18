@@ -324,6 +324,8 @@ useCopyCode(contentRef)
 function formatScore(s: number): string {
   return Number.isInteger(s) ? String(s) : s.toFixed(2)
 }
+useHead(() => ({ title: profile.value ? `${profile.value.name_hidden ? `UID ${profile.value.uid}` : profile.value.name} - 洛谷档案馆` : '用户 - 洛谷档案馆' }))
+
 </script>
 <template>
   <div v-if="profilePending" class="space-y-4">
