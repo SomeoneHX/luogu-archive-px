@@ -115,16 +115,17 @@ const { data: profile, error, pending: profilePending } = useLazyAsyncData(`user
   { server: false },
 )
 
-// 活动分三类：全部 / 专栏（文章、剪贴板）/ 动态（犇犇）。
-// 接口只提供 include_feed 与 include_discussion，文章与剪贴板始终返回，
-// 所以专栏与动态的区分在前端做；过滤后不足一屏时继续往后翻页补齐。
-type ActivityTab = 'all' | 'column' | 'feed'
+// 活动分四类：全部 / 专栏（文章、剪贴板）/ 动态（犇犇）/ 陶片（放逐记录）。
+// 接口只提供 include_feed 与 include_discussion，其余类型始终返回，
+// 所以专栏、动态、陶片的区分在前端做；过滤后不足一屏时继续往后翻页补齐。
+type ActivityTab = 'all' | 'column' | 'feed' | 'judgement'
 const activeKind = ref<ActivityTab>('all')
 
 const ACTIVITY_TABS: Array<{ key: ActivityTab; label: string }> = [
   { key: 'all', label: '活动' },
   { key: 'column', label: '专栏' },
   { key: 'feed', label: '动态' },
+  { key: 'judgement', label: '陶片' },
 ]
 
 // 活动列表分页：游标 = 列表最后一条的 time（更老的时间）
@@ -140,6 +141,7 @@ const ACTIVITY_MIN_ROWS = 10
 function matchesTab(item: ActivityItem, tab: ActivityTab) {
   if (tab === 'all') return true
   if (tab === 'column') return item.kind === 'article' || item.kind === 'paste'
+  if (tab === 'judgement') return item.kind === 'judgement'
   return item.kind === 'feed'
 }
 
@@ -155,7 +157,7 @@ async function fetchActivity(reset: boolean) {
   try {
     for (let round = 0; round < 4; round++) {
       const query: Record<string, any> = {
-        include_feed: tab !== 'column',
+        include_feed: tab === 'all' || tab === 'feed',
         include_discussion: tab === 'all',
         limit: PAGE_SIZE,
       }
