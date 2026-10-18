@@ -175,25 +175,26 @@ useHead({ title: '提交插件 - 洛谷档案馆' })
       </Button>
     </header>
 
-    <Card class="gap-0 py-0">
-      <CardContent class="pt-5">
-        <div class="space-y-1.5">
-          <Label class="text-sm font-medium">洛谷文章编号</Label>
-          <div class="flex flex-wrap gap-2">
-            <Input
-              v-model.trim="articleId"
-              maxlength="16"
-              placeholder="例如 jbekb3o8"
-              :disabled="editing || hasPending"
-              class="max-w-[16rem] font-mono"
-            />
-            <Button type="button" variant="outline" @click="inspectArticle">确认文章</Button>
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>洛谷文章编号</CardTitle>
+        <CardDescription>插件正文取自该文章的最新归档版本。</CardDescription>
+      </CardHeader>
+      <CardContent class="space-y-3">
+        <div class="flex flex-wrap gap-2">
+          <Input
+            v-model.trim="articleId"
+            maxlength="16"
+            placeholder="例如 jbekb3o8"
+            :disabled="editing || hasPending"
+            class="max-w-[16rem] font-mono"
+          />
+          <Button type="button" variant="outline" @click="inspectArticle">确认文章</Button>
         </div>
 
         <div
           v-if="article"
-          class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
         >
           <span class="min-w-0 text-sm font-medium text-foreground">{{ article.title }}</span>
           <span class="text-xs text-muted-foreground">
