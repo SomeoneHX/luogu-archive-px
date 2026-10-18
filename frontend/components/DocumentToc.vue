@@ -84,9 +84,9 @@ onBeforeUnmount(() => {
   <nav
     v-if="headings.length"
     aria-label="文档目录"
-    class="sticky top-[18px] hidden max-h-[calc(100vh-36px)] overflow-y-auto rounded-xl border border-border bg-card p-4 [scrollbar-width:thin] xl:block"
+    class="sticky top-4 hidden max-h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:thin] xl:block"
   >
-    <p class="mb-2 flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+    <p class="border-b border-border pb-3 text-sm font-semibold tracking-tight">
       目录
     </p>
     <ul class="space-y-0.5 text-[13px]">
