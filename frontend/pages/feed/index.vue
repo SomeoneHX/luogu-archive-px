@@ -120,7 +120,16 @@ useCopyCode(listRef)
       </p>
     </header>
 
-    <LoadingPanel v-if="firstPending && !items.length" title="正在加载犇犇" text="页面已经打开，正在读取最新的“洛谷微博”…" />
+    <ul v-if="firstPending && !items.length" class="mt-4 space-y-2.5">
+      <li v-for="i in 6" :key="i" class="flex gap-3 rounded-xl border border-border bg-card p-4">
+        <Skeleton class="size-8 shrink-0 rounded-full" />
+        <div class="min-w-0 flex-1 space-y-2.5">
+          <Skeleton class="h-4 w-40" />
+          <Skeleton class="h-3.5 w-full max-w-[80%]" />
+          <Skeleton class="h-3.5 w-full max-w-[55%]" />
+        </div>
+      </li>
+    </ul>
 
     <template v-else>
       <ul v-if="items.length" ref="listRef" class="mt-4 space-y-2.5">

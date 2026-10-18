@@ -65,7 +65,14 @@ useCopyCode(contentRef)
 
 <template>
   <div class="pt-1">
-    <LoadingPanel v-if="pending" title="loading……" text="" />
+    <div v-if="pending" class="flex gap-3 rounded-xl border border-border bg-card p-4 sm:p-5">
+      <Skeleton class="size-10 shrink-0 rounded-full" />
+      <div class="min-w-0 flex-1 space-y-2.5">
+        <Skeleton class="h-4 w-40" />
+        <Skeleton class="h-3.5 w-full max-w-[85%]" />
+        <Skeleton class="h-3.5 w-full max-w-[60%]" />
+      </div>
+    </div>
 
     <div v-else-if="error" class="rounded-xl border border-dashed border-border p-10 text-center">
       <p class="text-sm font-medium text-foreground">{{ error.data?.message || '犇犇加载失败' }}</p>
