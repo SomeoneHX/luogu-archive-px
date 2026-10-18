@@ -310,11 +310,36 @@ function userBrief(row: ScoreboardRow) {
           </table>
         </div>
 
-        <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 border-t border-border py-3.5" aria-label="排行榜分页">
-          <Button variant="outline" size="sm" :disabled="page <= 1" @click="page--">上一页</Button>
-          <span class="text-sm tabular-nums text-muted-foreground">第 {{ page }} / {{ totalPages }} 页</span>
-          <Button variant="outline" size="sm" :disabled="page >= totalPages" @click="page++">下一页</Button>
-        </div>
+        <Pagination
+          v-if="totalPages > 1"
+          v-slot="{ page: current }"
+          class="border-t border-border py-3.5"
+          :page="page"
+          :total="data?.total || 0"
+          :items-per-page="50"
+          :sibling-count="1"
+          show-edges
+          @update:page="(p: number) => (page = p)"
+        >
+          <PaginationContent v-slot="{ items }">
+            <PaginationPrevious aria-label="上一页" />
+
+            <template v-for="(item, index) in items">
+              <PaginationItem
+                v-if="item.type === 'page'"
+                :key="`p-${item.value}`"
+                :value="item.value"
+                :is-active="item.value === current"
+                :aria-label="`第 ${item.value} 页`"
+              >
+                {{ item.value }}
+              </PaginationItem>
+              <PaginationEllipsis v-else :key="`e-${index}`" :index="index" />
+            </template>
+
+            <PaginationNext aria-label="下一页" />
+          </PaginationContent>
+        </Pagination>
       </Card>
     </template>
 
