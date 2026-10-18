@@ -318,17 +318,17 @@ function buildDiff(leftText: string, rightText: string): DiffRow[] {
 
       <!-- 结果 -->
       <Card class="grid min-w-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-0 overflow-hidden py-0">
-        <CardHeader class="flex-row items-center justify-between border-b border-border px-5 py-4">
-          <div class="grid gap-1">
-            <CardTitle class="text-lg">{{ articleTitle || '修正结果' }}</CardTitle>
-            <CardDescription class="text-[13px]">
-              {{ fixedText ? `变更行 ${changedCount}` : '等待输入后生成差异对比' }}
-            </CardDescription>
-          </div>
-          <Button variant="outline" size="sm" :disabled="!fixedText" @click="copyResult">
-            <Copy class="size-3.5" />
-            {{ copied ? '已复制' : '复制' }}
-          </Button>
+        <CardHeader class="border-b border-border px-5 py-4">
+          <CardTitle class="text-lg">{{ articleTitle || '修正结果' }}</CardTitle>
+          <CardDescription class="text-[13px]">
+            {{ fixedText ? `变更行 ${changedCount}` : '等待输入后生成差异对比' }}
+          </CardDescription>
+          <CardAction>
+            <Button variant="outline" size="sm" :disabled="!fixedText" @click="copyResult">
+              <Copy class="size-3.5" />
+              {{ copied ? '已复制' : '复制' }}
+            </Button>
+          </CardAction>
         </CardHeader>
 
         <div class="grid grid-cols-2 border-b border-border bg-muted/60 text-xs font-bold text-muted-foreground">
