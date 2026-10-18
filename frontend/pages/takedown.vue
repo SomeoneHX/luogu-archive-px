@@ -158,6 +158,10 @@ const probeState = computed(() => {
             <strong class="text-sm">{{ probeState.title }}</strong>
             <span class="text-sm text-muted-foreground">{{ probeState.text }}</span>
           </div>
+          <p
+            v-else-if="message"
+            class="text-sm text-[var(--lg-red)]"
+          >{{ message }}</p>
         </CardContent>
       </Card>
 
