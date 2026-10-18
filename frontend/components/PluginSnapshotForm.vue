@@ -19,13 +19,7 @@ const codeSizeText = computed(() => {
   return `${(codeBytes.value / 1024 / 1024).toFixed(2)} MiB`
 })
 
-// 等级 0-3 对应绿 / 明亮绿 / 黄 / 红，滑块与容器共用同一个变量
-const LEVEL_COLOR: Record<number, string> = {
-  0: 'var(--lg-green)',
-  1: 'var(--lg-cyan)',
-  2: 'var(--lg-yellow)',
-  3: 'var(--lg-red)',
-}
+const { levelColor } = usePluginLabels()
 const levelModel = computed({
   get: () => [model.value.user_request_level],
   set: (value: number[]) => { model.value.user_request_level = value?.[0] ?? 0 },
@@ -204,7 +198,7 @@ function toggleTag(tagId: number, checked: boolean) {
       <CardContent class="space-y-4">
         <div
           class="rounded-lg border p-4"
-          :style="{ borderColor: `color-mix(in srgb, ${LEVEL_COLOR[model.user_request_level]} 45%, var(--border))`, background: `color-mix(in srgb, ${LEVEL_COLOR[model.user_request_level]} 7%, var(--background))` }"
+          :style="{ borderColor: `color-mix(in srgb, ${levelColor(model.user_request_level)} 45%, var(--border))`, background: `color-mix(in srgb, ${levelColor(model.user_request_level)} 7%, var(--background))` }"
         >
           <div class="flex items-center justify-between gap-3">
             <span class="text-sm font-medium">用户提交的请求等级</span>
@@ -216,7 +210,7 @@ function toggleTag(tagId: number, checked: boolean) {
             :max="3"
             :step="1"
             class="mt-3 [&_[data-slot=slider-range]]:bg-[var(--level-color)] [&_[data-slot=slider-thumb]]:border-[var(--level-color)]"
-            :style="{ '--level-color': LEVEL_COLOR[model.user_request_level] }"
+            :style="{ '--level-color': levelColor(model.user_request_level) }"
             aria-label="用户提交的请求等级"
           />
           <div class="mt-1.5 flex justify-between px-0.5 text-[11px] text-muted-foreground" aria-hidden="true">
