@@ -328,21 +328,38 @@ useHead(() => ({ title: profile.value ? `${profile.value.name_hidden ? `UID ${pr
 
 </script>
 <template>
-  <div v-if="profilePending" class="space-y-4">
-    <Skeleton class="h-9 w-full rounded-md" />
-    <div class="grid items-start gap-6 lg:grid-cols-[268px_minmax(0,1fr)]">
+  <div v-if="profilePending" class="grid items-start gap-6 lg:grid-cols-[268px_minmax(0,1fr)]">
+    <aside class="flex min-w-0 flex-col gap-3">
       <Card class="gap-0 py-0">
-        <div class="flex flex-col items-center gap-3 p-6">
+        <div class="flex flex-col items-center px-5 py-6 text-center">
           <Skeleton class="size-20 rounded-full" />
-          <Skeleton class="h-5 w-32" />
-          <Skeleton class="h-3 w-40" />
-          <div class="mt-2 grid w-full grid-cols-3 gap-2">
-            <Skeleton v-for="i in 3" :key="i" class="h-12 rounded-md" />
+          <Skeleton class="mt-3 h-6 w-28" />
+          <Skeleton class="mt-1.5 h-4 w-40" />
+          <div class="mt-4 flex w-full divide-x divide-border overflow-hidden rounded-md border border-border">
+            <div v-for="i in 3" :key="i" class="flex-1 px-1 py-2.5">
+              <Skeleton class="mx-auto h-3 w-8" />
+              <Skeleton class="mx-auto mt-1 h-4 w-10" />
+            </div>
+          </div>
+          <div class="mt-4 grid w-full grid-cols-2 gap-2">
+            <Skeleton class="col-span-2 h-9 w-full rounded-md" />
+            <Skeleton class="h-8 w-full rounded-md" />
+            <Skeleton class="h-8 w-full rounded-md" />
+            <Skeleton class="col-span-2 h-8 w-full rounded-md" />
           </div>
         </div>
       </Card>
-      <div class="space-y-3">
-        <Skeleton v-for="i in 5" :key="i" class="h-24 rounded-lg" />
+      <div class="space-y-1">
+        <Skeleton v-for="i in 3" :key="i" class="h-9 w-full rounded-md" />
+      </div>
+    </aside>
+    <div class="min-w-0">
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <Skeleton class="h-8 w-52 rounded-md" />
+        <Skeleton class="h-4 w-16" />
+      </div>
+      <div class="mt-4 space-y-2.5">
+        <Skeleton v-for="i in 5" :key="i" class="h-20 rounded-xl" />
       </div>
     </div>
   </div>
