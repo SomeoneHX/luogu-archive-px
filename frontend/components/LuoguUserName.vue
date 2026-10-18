@@ -33,9 +33,14 @@ const props = defineProps<{
   truncate?: boolean
 }>()
 
+const isSuspended = computed(() => props.user?.name === '#SUSPENDED#')
+
 const displayName = computed(() => {
   if (!props.user) return ''
-  return props.hidden ? `UID ${props.user.uid}` : props.user.name
+  if (props.hidden) return `UID ${props.user.uid}`
+  // 洛谷侧被封禁的用户名，站上统一显示为划掉的"封禁用户"
+  if (isSuspended.value) return '封禁用户'
+  return props.user.name
 })
 
 function levelTier(lv: number | undefined): 'green' | 'blue' | 'top' | null {
@@ -65,12 +70,14 @@ const effectiveBadge = computed<string | null>(() => {
       class="lg-name"
       :data-color="user.color"
       :data-hidden="hidden ? '1' : undefined"
+      :data-suspended="isSuspended ? '1' : undefined"
     >{{ displayName }}</NuxtLink>
     <span
       v-else
       class="lg-name"
       :data-color="user.color"
       :data-hidden="hidden ? '1' : undefined"
+      :data-suspended="isSuspended ? '1' : undefined"
     >{{ displayName }}</span>
 
     <template v-if="showBadge">
@@ -160,6 +167,11 @@ const effectiveBadge = computed<string | null>(() => {
 }
 .lg-mark[data-tier="green"] { color: var(--lg-green); }
 .lg-mark[data-tier="blue"]  { color: var(--lg-blue); }
+
+/* 封禁用户：划掉（与洛谷一致），颜色跟随名字颜色不覆盖 */
+.lg-name[data-suspended="1"] {
+  text-decoration: line-through;
+}
 
 /* 钩子 / 气球 8+ 都是金 —— 规则跟洛谷一致：3-5 绿、6-7 蓝、8+ 金 */
 .lg-mark[data-tier="top"] { color: #f5b400; }

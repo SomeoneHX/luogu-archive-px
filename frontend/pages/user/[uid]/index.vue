@@ -522,7 +522,7 @@ function formatScore(s: number): string {
               </template>
 
               <template v-else-if="a.kind === 'judgement'">
-                <div class="mt-2 rounded-md border border-border bg-muted/40 p-3">
+                <div class="mt-2 space-y-2 border-l-2 border-border pl-3">
                   <Badge
                     variant="outline"
                     class="h-5 px-1.5 font-normal"
@@ -549,7 +549,7 @@ function formatScore(s: number): string {
                     <span
                       v-for="p in describePermission(a.judgement_revoked ?? 0)"
                       :key="`r-${idx}-${p}`"
-                      class="rounded border border-border bg-card px-2 py-0.5"
+                      class="rounded bg-muted px-2 py-0.5"
                     >{{ p }}</span>
                     <span class="text-muted-foreground">权限</span>
                   </div>
@@ -559,7 +559,7 @@ function formatScore(s: number): string {
                     <span
                       v-for="p in describePermission(a.judgement_added ?? 0)"
                       :key="`a-${idx}-${p}`"
-                      class="rounded border border-border bg-card px-2 py-0.5"
+                      class="rounded bg-muted px-2 py-0.5"
                     >{{ p }}</span>
                     <span class="text-muted-foreground">权限</span>
                   </div>
