@@ -7,8 +7,7 @@ const color = computed(() => levelColor(props.level))
 
 <template>
   <span
-    class="inline-flex items-center whitespace-nowrap rounded-full border font-semibold"
-    :class="compact ? 'min-h-6 gap-1.5 pl-2 pr-1 text-xs' : 'min-h-[30px] gap-2 pl-2.5 pr-1 text-[13px]'"
+    class="inline-flex items-center whitespace-nowrap rounded-full border font-semibold"    :class="compact ? 'min-h-6 gap-1.5 py-0.5 pl-2 pr-0.5 text-xs' : 'min-h-[30px] gap-2 py-[3px] pl-2.5 pr-[3px] text-[13px]'"
     :style="{
       borderColor: `color-mix(in srgb, ${color} 45%, var(--border))`,
       background: `color-mix(in srgb, ${color} 8%, var(--background))`,
