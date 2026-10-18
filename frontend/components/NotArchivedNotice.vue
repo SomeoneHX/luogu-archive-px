@@ -4,7 +4,7 @@
   额外动作（如返回列表）放默认插槽。
 -->
 <script setup lang="ts">
-import { ArchiveX, RotateCw } from 'lucide-vue-next'
+import { Inbox, RotateCw } from 'lucide-vue-next'
 
 defineProps<{
   title: string
@@ -17,7 +17,7 @@ const emit = defineEmits<{ retry: [] }>()
 <template>
   <div class="mx-auto max-w-sm py-16 text-center">
     <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-muted">
-      <ArchiveX class="size-6 text-muted-foreground" />
+      <Inbox class="size-6 text-muted-foreground" />
     </div>
     <h2 class="mt-4 text-base font-semibold text-foreground">{{ title }}</h2>
     <p v-if="description" class="mt-1.5 text-sm leading-relaxed text-muted-foreground">

@@ -44,7 +44,7 @@ interface DiscussionDetail {
   replies: DiscussionReply[]
 }
 
-const { data, error, pending } = useLazyAsyncData(
+const { data, error, pending, refresh } = useLazyAsyncData(
   `discussion-${id}`,
   () => api<DiscussionDetail>(`/discuss/${id}`, {
     query: { page: currentPage.value, per_page: perPage },
@@ -94,16 +94,12 @@ useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '
       </div>
     </div>
 
-    <Card v-else-if="error && !data" class="gap-0 py-0">
-      <CardContent class="flex flex-col items-center px-6 py-12 text-center">
-        <h2 class="text-base font-semibold text-foreground">
-          {{ error.data?.message || '加载失败' }}
-        </h2>
-        <p v-if="error.statusCode === 404" class="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-          首次保存已经进入队列，稍后刷新即可查看。
-        </p>
-      </CardContent>
-    </Card>
+    <NotArchivedNotice
+      v-else-if="error && !data"
+      :title="error.data?.message || '加载失败'"
+      :description="error.statusCode === 404 ? '首次保存已经进入队列，点击重新加载即可。' : null"
+      @retry="refresh()"
+    />
 
     <div v-else-if="data" ref="contentRef">
       <ContentHeader
