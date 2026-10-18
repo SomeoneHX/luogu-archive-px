@@ -91,14 +91,22 @@ async function submit() {
   }
 }
 
-const probeCls = computed(() => {
-  if (!probe.value || probe.value.target_type === 'user') {
-    return 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]'
+// 探测结果条：绿 = 可提交 / 地址有效，红 = 原内容仍可访问
+const probeState = computed(() => {
+  if (!probe.value) return null
+  const accessible = probe.value.accessible
+  const owner = probe.value.is_owner
+  const blocked = probe.value.target_type !== 'user' && accessible && !owner
+  return {
+    blocked,
+    title: probe.value.target_type !== 'user' ? (accessible ? '可访问' : '不可访问') : '地址有效',
+    text: probe.value.target_type !== 'user'
+      ? (accessible ? (owner ? '已匹配作者身份，可以申请停止公开展示。' : '原内容仍可访问，暂不能提交申请。') : '可以提交删除申请。')
+      : '用户主页申请无需检查原站访问状态。',
+    cls: blocked
+      ? 'border-[var(--lg-red)] bg-[color-mix(in_srgb,var(--lg-red)_8%,var(--card))]'
+      : 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]',
   }
-  if (probe.value.accessible && !probe.value.is_owner) {
-    return 'border-[var(--lg-red)] bg-[color-mix(in_srgb,var(--lg-red)_8%,var(--card))]'
-  }
-  return 'border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))]'
 })
 </script>
 
@@ -120,53 +128,49 @@ const probeCls = computed(() => {
       <p class="mt-1 text-sm text-muted-foreground">{{ message }}</p>
     </div>
 
-    <form v-else class="mt-5" @submit.prevent="submit">
+    <form v-else class="mt-5 space-y-5" @submit.prevent="submit">
       <!-- 内容地址 -->
-      <div>
-        <label class="mb-1.5 block text-sm font-semibold" for="td-url">内容地址</label>
-        <Input
-          id="td-url"
-          v-model.trim="form.target_url"
-          type="url"
-          placeholder="粘贴用户主页、文章、剪贴板、犇犇或讨论的完整地址"
-          maxlength="1024"
-          class="h-12 text-base"
-        />
-        <small class="mt-1.5 block text-xs text-muted-foreground">系统会自动识别内容类型</small>
-        <span v-if="probe?.target_type && probe?.target_id" class="mt-2 block text-sm font-semibold">
-          识别到：{{ typeNames[probe.target_type] || probe.target_type }}：{{ probe.target_id }}
-        </span>
-      </div>
+      <Card class="gap-4 py-5">
+        <CardHeader class="px-5">
+          <CardTitle class="text-base">内容地址</CardTitle>
+          <CardDescription class="text-sm">粘贴内容完整地址，系统会自动识别内容类型。</CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-3 px-5">
+          <Input
+            v-model.trim="form.target_url"
+            type="url"
+            placeholder="粘贴用户主页、文章、剪贴板、犇犇或讨论的完整地址"
+            maxlength="1024"
+            class="h-12 text-base"
+          />
+          <span v-if="probe?.target_type && probe?.target_id" class="block text-sm font-semibold">
+            识别到：{{ typeNames[probe.target_type] || probe.target_type }}：{{ probe.target_id }}
+          </span>
+          <div
+            v-if="probing"
+            class="rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground"
+          >检查中……</div>
+          <div
+            v-else-if="probeState"
+            class="flex flex-col items-start gap-1 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
+            :class="probeState.cls"
+          >
+            <strong class="text-sm">{{ probeState.title }}</strong>
+            <span class="text-sm text-muted-foreground">{{ probeState.text }}</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <!-- 探测结果 -->
-      <div v-if="probing" class="mt-4 rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
-        检查中……
-      </div>
-      <div
-        v-else-if="probe && probe.target_type !== 'user'"
-        class="mt-4 flex flex-col items-start gap-1 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
-        :class="probeCls"
-      >
-        <strong class="text-sm">{{ probe.accessible ? '可访问' : '不可访问' }}</strong>
-        <span class="text-sm text-muted-foreground">
-          {{ probe.accessible ? (probe.is_owner ? '已匹配作者身份，可以申请停止公开展示。' : '原内容仍可访问，暂不能提交申请。') : '可以提交删除申请。' }}
-        </span>
-      </div>
-      <div v-else-if="probe" class="mt-4 flex items-center gap-3 rounded-lg border border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))] px-4 py-3">
-        <strong class="text-sm">地址有效</strong>
-        <span class="text-sm text-muted-foreground">用户主页申请无需检查原站访问状态。</span>
-      </div>
-
-      <!-- 申请表单 -->
-      <template v-if="probe?.can_submit">
-        <div
-          v-if="probe.is_owner"
-          class="mt-4 rounded-lg border border-[var(--lg-green)] bg-[color-mix(in_srgb,var(--lg-green)_9%,var(--card))] px-4 py-3 text-sm text-muted-foreground"
-        >
-          已匹配绑定的洛谷 UID，提交后将自动停止公开展示。
-        </div>
-        <template v-else>
-          <div class="mt-5 grid gap-x-4 gap-y-0 sm:grid-cols-2">
+      <!-- 申请信息 -->
+      <Card v-if="probe?.can_submit" class="gap-4 py-5">
+        <CardHeader class="px-5">
+          <CardTitle class="text-base">申请人信息</CardTitle>
+          <CardDescription class="text-sm">
+            {{ probe.is_owner ? '已匹配绑定的洛谷 UID，提交后将自动停止公开展示。' : '留下身份信息便于管理员联系核实。' }}
+          </CardDescription>
+        </CardHeader>
+        <CardContent v-if="!probe.is_owner" class="space-y-4 px-5">
+          <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="mb-1.5 block text-sm font-semibold" for="td-name">你的称呼（选填）</label>
               <Input id="td-name" v-model="form.requester_name" maxlength="128" class="h-10" />
@@ -183,7 +187,7 @@ const probeCls = computed(() => {
               />
             </div>
           </div>
-          <div class="mt-4">
+          <div>
             <label class="mb-1.5 block text-sm font-semibold" for="td-reason">申请理由</label>
             <Textarea
               id="td-reason"
@@ -194,20 +198,17 @@ const probeCls = computed(() => {
               class="min-h-32"
             />
           </div>
-          <p class="mt-3 text-sm text-muted-foreground">
+          <p class="text-sm text-muted-foreground">
             自己的内容？<NuxtLink to="/login" class="font-medium text-foreground underline-offset-2 hover:underline">登录</NuxtLink>或<NuxtLink to="/register" class="font-medium text-foreground underline-offset-2 hover:underline">注册</NuxtLink>并在<NuxtLink to="/me" class="font-medium text-foreground underline-offset-2 hover:underline">个人中心绑定洛谷账号</NuxtLink>后，可无条件自动删除。
           </p>
-        </template>
-      </template>
-
-      <Button
-        type="submit"
-        class="mt-5 px-6"
-        :disabled="!probe?.can_submit || state === 'submitting'"
-      >
-        {{ state === 'submitting' ? '提交中……' : '提交申请' }}
-      </Button>
-      <p v-if="message" class="mt-2 text-sm text-[var(--lg-red)]">{{ message }}</p>
+        </CardContent>
+        <CardFooter class="justify-end gap-3 px-5">
+          <p v-if="message" class="mr-auto text-sm text-[var(--lg-red)]">{{ message }}</p>
+          <Button type="submit" :disabled="state === 'submitting'">
+            {{ state === 'submitting' ? '提交中……' : '提交申请' }}
+          </Button>
+        </CardFooter>
+      </Card>
     </form>
   </div>
 </template>
