@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronDown, Clock3, Copy, ExternalLink } from '@lucide/vue'
+import { Check, ChevronDown, Clock3, Copy, ExternalLink, History } from '@lucide/vue'
 
 const { format, smart } = useTime()
 
@@ -180,6 +180,15 @@ onBeforeUnmount(() => clearTimeout(copyTimer))
           <span v-else>作者未收录</span>
 
           <span class="text-xs">上次更新 · {{ smart(data.crawled_at) }}</span>
+
+          <NuxtLink
+            v-if="versions.length > 1"
+            :to="`/article/${id}/history`"
+            class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <History class="size-3.5" />
+            {{ versions.length }} 个历史版本
+          </NuxtLink>
         </div>
 
         <div class="mt-4 flex flex-wrap items-center gap-2 border-b border-border pb-6">
