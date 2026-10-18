@@ -64,37 +64,97 @@ useCopyCode(contentRef)
 </script>
 
 <template>
-  <div class="feed-detail">
+  <div class="pt-1">
     <LoadingPanel v-if="pending" title="loading……" text="" />
-    <div v-else-if="error" class="error-box">
-      <h2>{{ error.data?.message || '犇犇加载失败' }}</h2>
+
+    <div v-else-if="error" class="rounded-xl border border-dashed border-border p-10 text-center">
+      <p class="text-sm font-medium text-foreground">{{ error.data?.message || '犇犇加载失败' }}</p>
+      <Button variant="outline" size="sm" class="mt-4" @click="navigateTo('/feed')">返回犇犇列表</Button>
     </div>
-    <article v-else-if="feed" class="feed-item">
-      <NuxtLink v-if="feed.user" :to="`/user/${feed.user.uid}`" class="avatar-link">
-        <img v-if="feed.user.avatar" :src="feed.user.avatar" alt="" class="avatar">
-        <div v-else class="avatar avatar-fallback" :data-color="feed.user.color">{{ (feed.user.name || '?').charAt(0).toUpperCase() }}</div>
+
+    <article v-else-if="feed" class="flex gap-3 rounded-xl border border-border bg-card p-4 sm:p-5">
+      <NuxtLink :to="feed.user ? `/user/${feed.user.uid}` : ''" class="shrink-0" :class="{ 'pointer-events-none': !feed.user }">
+        <UserAvatar :user="feed.user" size="xl" />
       </NuxtLink>
-      <div v-else class="avatar avatar-fallback" data-color="Gray">?</div>
-      <div class="body">
-        <header class="meta">
-          <LuoguUserName :user="feed.user" show-badge />
-          <span class="time">{{ smart(feed.time) }}</span>
-        </header>
-        <div ref="contentRef" class="lg-content content" v-html="feedHtml(feed)" />
-        <footer class="feed-foot">
-          <NuxtLink :to="`/feed/${feed.id}`" class="feed-id">#{{ feed.id }}</NuxtLink>
+
+      <div class="min-w-0 flex-1 [overflow-wrap:anywhere] [&_a]:break-all">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+          <LuoguUserName :user="feed.user" show-badge truncate />
+          <time class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ smart(feed.time) }}</time>
+        </div>
+        <div
+          ref="contentRef"
+          class="feed-content lg-content mt-2 text-[15px] leading-relaxed"
+          v-html="feedHtml(feed)"
+        />
+        <div class="mt-2.5 flex items-center gap-3 border-t border-border pt-2.5 text-xs text-muted-foreground">
+          <span class="tabular-nums">#{{ feed.id }}</span>
           <FeedReplyButton :content="feed.content_md" :sender-name="feed.user?.name" />
-        </footer>
+        </div>
       </div>
     </article>
   </div>
 </template>
 
 <style scoped>
-.feed-detail{max-width:100%;padding-top:4px}.feed-item{display:flex;gap:14px;padding:18px 20px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
-.avatar-link{flex-shrink:0;text-decoration:none}.avatar{display:block;width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--bg)}.avatar-fallback{display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:600;background:var(--lg-gray)}
-.avatar-fallback[data-color="Blue"]{background:var(--lg-blue)}.avatar-fallback[data-color="Green"]{background:var(--lg-green)}.avatar-fallback[data-color="Orange"]{background:var(--lg-orange)}.avatar-fallback[data-color="Red"]{background:var(--lg-red)}.avatar-fallback[data-color="Purple"]{background:var(--lg-purple)}.avatar-fallback[data-color="Cyan"]{background:var(--lg-cyan)}.avatar-fallback[data-color="Black"]{background:var(--lg-black)}.avatar-fallback[data-color="Cheater"]{background:var(--lg-cheater-tag)}
-.body{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.meta{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;margin-bottom:8px}.time{color:var(--text-muted);font-size:12px}.content{font-size:15px;line-height:1.65;overflow-wrap:anywhere;word-break:break-word}.content :deep(img){max-width:100%;height:auto}.feed-foot{display:flex;align-items:center;gap:10px;margin-top:10px}.feed-id{color:var(--text-muted);font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:11px;opacity:.55}
-.content :deep(.feed-completion-wrap){position:relative;display:inline;cursor:help;outline:none}.content :deep(.feed-completion-block){display:block;width:fit-content;max-width:100%}.content :deep(.feed-auto-merged),.content :deep(.feed-auto-merged-link),.content :deep(.feed-auto-merged-link a){text-decoration-line:underline;text-decoration-color:#7db9e8;text-decoration-thickness:2px;text-underline-offset:3px}.content :deep(.feed-auto-merged-image){display:inline-block;max-width:100%;box-shadow:0 2px 0 #7db9e8}.content :deep(.feed-auto-merged-image img){display:block}.content :deep(.feed-completion-popover){position:absolute;z-index:30;top:calc(100% + 9px);left:50%;display:none;width:max-content;max-width:280px;padding:8px 10px;transform:translateX(-50%);border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);box-shadow:0 8px 22px rgba(0,0,0,.16);font-size:12px;line-height:1.55;white-space:normal;pointer-events:none}.content :deep(.feed-completion-wrap:hover>.feed-completion-popover),.content :deep(.feed-completion-wrap:focus-within>.feed-completion-popover){display:block}
-.error-box{padding:28px;border:1px solid var(--border);border-radius:8px;background:var(--surface);text-align:center}@media(max-width:768px){.feed-item{gap:11px;padding:14px}.avatar{width:42px;height:42px}}
+/* 犇犇正文是 v-html 生成，自动补回内容的下划线与悬浮说明只能走 :deep。 */
+.feed-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+.feed-content :deep(.feed-completion-wrap) {
+  position: relative;
+  display: inline;
+  cursor: help;
+  outline: none;
+}
+.feed-content :deep(.feed-completion-block) {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+}
+.feed-content :deep(.feed-auto-merged),
+.feed-content :deep(.feed-auto-merged-link),
+.feed-content :deep(.feed-auto-merged-link a) {
+  text-decoration-line: underline;
+  text-decoration-color: #7db9e8;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.feed-content :deep(.feed-auto-merged img),
+.feed-content :deep(.feed-auto-merged-image) {
+  box-shadow: 0 2px 0 #7db9e8;
+}
+.feed-content :deep(.feed-auto-merged-image) {
+  display: inline-block;
+  max-width: 100%;
+}
+.feed-content :deep(.feed-auto-merged-image img) {
+  display: block;
+}
+.feed-content :deep(.feed-completion-popover) {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 9px);
+  left: 50%;
+  display: none;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  color: inherit;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+}
+.feed-content :deep(.feed-completion-wrap:hover > .feed-completion-popover),
+.feed-content :deep(.feed-completion-wrap:focus-within > .feed-completion-popover) {
+  display: block;
+}
 </style>
