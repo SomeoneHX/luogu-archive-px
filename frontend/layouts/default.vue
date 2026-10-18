@@ -168,8 +168,8 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
 
 <template>
   <div class="min-h-dvh bg-background text-foreground">
-    <!-- 移动端顶栏 -->
-    <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md lg:hidden">
+    <!-- 移动端顶栏：fixed 而非 sticky，弹层锁滚动给 body 加 overflow:hidden 时 sticky 会失去参照 -->
+    <header class="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md lg:hidden">
       <Sheet v-model:open="mobileOpen">
         <SheetTrigger as-child>
           <Button variant="ghost" size="icon" aria-label="打开导航">
@@ -323,7 +323,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false })
       </div>
     </aside>
 
-    <div class="flex min-h-dvh flex-col transition-[padding] duration-200 ease-out" :class="collapsed ? 'lg:pl-16' : 'lg:pl-60'">
+    <div class="flex min-h-dvh flex-col pt-14 transition-[padding] duration-200 ease-out lg:pt-0" :class="collapsed ? 'lg:pl-16' : 'lg:pl-60'">
       <main class="mx-auto w-full max-w-[1180px] flex-1 px-[var(--page-gutter)] py-8">
         <slot />
       </main>

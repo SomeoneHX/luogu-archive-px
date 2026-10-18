@@ -57,14 +57,10 @@ body {
     color var(--duration-base) var(--ease-out-soft);
 }
 
-/* 只作用在 html：clip 不创建滚动容器，横向溢出被裁掉且不影响 sticky 的参照。
-   若加在 body 上，弹层锁定滚动（body overflow: hidden）时 body 会成为
-   滚动容器，页面内 sticky 元素会失去参照、跟着文档流被顶走。 */
-html {
-  overflow-x: clip;
-  /* 弹层打开时会锁定滚动，固定预留滚动条槽位，避免内容宽度变化导致横向跳动 */
-  scrollbar-gutter: stable;
-}
+/* html 上不可设置非 visible 的 overflow（如 overflow-x: clip）：
+   html 非 visible 时 body 的 overflow 不再传播到视口，
+   弹层锁 body overflow:hidden 会失效（滚动条不消失、padding 补偿落空成缺口），
+   且 body 自身会变成滚动容器，页面内 sticky 元素失去参照。 */
 
 a {
   color: var(--link);
