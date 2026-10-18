@@ -158,9 +158,9 @@ function chooseForum(slug: string) {
 
       <div class="min-w-0 space-y-4">
         <div v-if="pending && !data" class="space-y-2.5">
-          <div v-for="i in 6" :key="i" class="flex items-start gap-3.5 rounded-lg border border-border bg-card px-4 py-3.5">
+          <div v-for="i in 6" :key="i" class="grid grid-cols-[40px_minmax(0,1fr)] items-center gap-x-3.5 rounded-lg border border-border bg-card px-[13px] py-3 min-[820px]:grid-cols-[46px_minmax(0,1fr)_minmax(220px,32%)] min-[820px]:px-[18px] min-[820px]:py-3.5 min-[820px]:min-h-[88px]">
             <Skeleton class="size-10 shrink-0 rounded-full" />
-            <div class="flex-1 space-y-2">
+            <div class="min-w-0 space-y-2">
               <Skeleton class="h-4 w-3/5" />
               <Skeleton class="h-3 w-2/5" />
             </div>
@@ -172,42 +172,41 @@ function chooseForum(slug: string) {
             v-for="item in data?.items || []"
             :key="item.discussion_id"
             :to="`/discuss/${item.discussion_id}`"
-            class="flex items-start gap-3.5 rounded-lg border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary/40 hover:bg-accent/40"
+            class="grid grid-cols-[40px_minmax(0,1fr)] items-center gap-x-3.5 gap-y-2 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40 hover:bg-accent/40 min-[820px]:grid-cols-[46px_minmax(0,1fr)_minmax(220px,32%)] min-[820px]:gap-x-4 min-[820px]:py-3.5"
           >
             <UserAvatar :user="item.author" size="xl" class="shrink-0" />
 
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-foreground">{{ item.title }}</p>
-              <div class="mt-1.5 flex min-w-0 items-center gap-x-2 overflow-hidden text-xs text-muted-foreground [&_.lg-badge]:h-4 [&_.lg-badge]:py-0 [&_.lg-badge]:text-[10px] [&_.lg-badge]:leading-4">
+            <div class="min-w-0">
+              <strong class="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">{{ item.title }}</strong>
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                 <LuoguUserName
                   v-if="item.author"
                   :user="item.author"
                   show-badge
                   no-link
                   truncate
-                  class="max-w-[5.5rem] shrink-0 sm:max-w-[12rem]"
+                  class="max-w-[5.5rem] shrink-0 min-[820px]:max-w-none"
                 />
                 <span v-else class="shrink-0">发帖人未收录</span>
-                <span class="shrink-0" aria-hidden="true">·</span>
                 <time class="shrink-0" :datetime="item.source_time || item.crawled_at">
                   {{ format(item.source_time || item.crawled_at) }}
                 </time>
-
-                <template v-if="item.latest_reply_author">
-                  <span class="hidden shrink-0 sm:inline" aria-hidden="true">·</span>
-                  <span class="hidden min-w-0 items-center gap-1 sm:inline-flex">
-                    <span class="shrink-0">最后回复</span>
-                    <LuoguUserName :user="item.latest_reply_author" truncate class="max-w-[7rem]" />
-                  </span>
-                </template>
               </div>
             </div>
 
-            <div class="hidden w-[104px] shrink-0 flex-col items-end gap-1.5 text-xs text-muted-foreground sm:flex">
+            <div class="col-start-2 grid min-w-0 justify-items-start gap-2 text-xs text-muted-foreground min-[820px]:col-auto min-[820px]:justify-items-end">
               <Badge variant="secondary" class="h-5 max-w-full px-1.5 font-normal">
                 <span class="truncate">{{ item.forum_name || '未知版块' }}</span>
               </Badge>
-              <span class="tabular-nums">{{ item.stored_reply_count }} 条回复</span>
+              <div class="flex min-w-0 items-center gap-x-2 whitespace-nowrap">
+                <span class="shrink-0 tabular-nums">{{ item.stored_reply_count }} 条回复</span>
+                <template v-if="item.latest_reply_author">
+                  <LuoguUserName :user="item.latest_reply_author" show-badge no-link truncate class="min-w-0" />
+                  <time v-if="item.latest_reply_time" class="shrink-0" :datetime="item.latest_reply_time">
+                    {{ format(item.latest_reply_time) }}
+                  </time>
+                </template>
+              </div>
             </div>
           </NuxtLink>
 
