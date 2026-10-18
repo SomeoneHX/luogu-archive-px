@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ExternalLink } from '@lucide/vue'
+
 const { smart } = useTime()
 
 const api = useApi()
@@ -107,280 +109,119 @@ function describePermission(bits: number): string[] {
   return out
 }
 
-function formatTime(t: string): string {
-  return smart(t)
+function actionTag(g: JudgementGroup) {
+  if (g.revoked_permission > 0 && g.added_permission === 0) return { text: '撤销权限', cls: 'text-[var(--lg-red)]' }
+  if (g.added_permission > 0 && g.revoked_permission === 0) return { text: '授予权限', cls: 'text-[var(--lg-green)]' }
+  if (g.revoked_permission === 0 && g.added_permission === 0) return { text: '棕名惩罚', cls: 'text-[var(--lg-cheater-tag)]' }
+  return { text: '权限变更', cls: 'text-muted-foreground' }
 }
 </script>
 
 <template>
   <div>
-    <OriginBanner
-      origin-url="https://www.luogu.com.cn/judgement"
-      title="陶片放逐"
-      :crawled-at="lastCrawled?.last_crawled_at"
-      content-type="judgement"
-      content-id="all"
-    />
+    <!-- 页面头：裸排 + border-b -->
+    <header class="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+      <div class="min-w-0">
+        <p class="text-xs font-medium tracking-wide text-muted-foreground">封禁公示归档</p>
+        <h1 class="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">陶片放逐</h1>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          v-if="lastCrawled?.last_crawled_at"
+          class="text-xs text-muted-foreground"
+        >上次更新 · {{ smart(lastCrawled.last_crawled_at) }}</span>
+        <Button variant="outline" size="sm" as-child>
+          <a href="https://www.luogu.com.cn/judgement" target="_blank" rel="noopener noreferrer">
+            <ExternalLink class="size-3.5" />
+            查看原文
+          </a>
+        </Button>
+        <SaveButton content-type="judgement" content-id="all" />
+      </div>
+    </header>
 
-    <LoadingPanel v-if="firstPending && !groups.length" title="正在加载陶片放逐" text="页面已经打开，正在读取最新的封禁公示归档…" />
+    <!-- 首屏骨架：与陶片卡同构 -->
+    <div v-if="firstPending && !groups.length" class="mt-5 space-y-3.5">
+      <div v-for="i in 5" :key="i" class="space-y-3 rounded-xl border border-border bg-card p-4">
+        <div class="flex items-center gap-2.5">
+          <Skeleton class="h-5 w-20" />
+          <Skeleton class="ml-auto h-3.5 w-24" />
+        </div>
+        <div class="flex gap-2.5">
+          <Skeleton class="size-10 rounded-full" />
+          <Skeleton class="h-5 w-28 self-center" />
+        </div>
+        <Skeleton class="h-4 w-full max-w-[70%]" />
+      </div>
+    </div>
 
-    <ul v-else-if="groups.length" class="list">
-      <li v-for="g in groups" :key="g.group_key" class="item">
-        <!-- 顶部：权限变更头标 + 时间 -->
-        <header class="head">
+    <ul v-else-if="groups.length" class="mt-5 list-none space-y-3.5">
+      <li
+        v-for="g in groups"
+        :key="g.group_key"
+        class="space-y-3 rounded-xl border border-border bg-card p-4"
+      >
+        <!-- 顶部：权限变更头标 + 人数 + 时间 -->
+        <header class="flex flex-wrap items-center gap-2.5 text-sm">
+          <span class="text-[13px] font-semibold" :class="actionTag(g).cls">{{ actionTag(g).text }}</span>
           <span
-            class="action-tag"
-            :class="g.revoked_permission === 0 && g.added_permission === 0
-              ? 'cheater'
-              : (g.revoked_permission > 0 ? 'revoked' : 'added')"
-          >
-            <template v-if="g.revoked_permission > 0 && g.added_permission === 0">
-              撤销权限
-            </template>
-            <template v-else-if="g.added_permission > 0 && g.revoked_permission === 0">
-              授予权限
-            </template>
-            <template v-else-if="g.revoked_permission === 0 && g.added_permission === 0">
-              棕名惩罚
-            </template>
-            <template v-else>
-              权限变更
-            </template>
-          </span>
-          <span v-if="g.count > 1" class="count">{{ g.count }} 人</span>
-          <span class="time">{{ formatTime(g.time_end) }}</span>
+            v-if="g.count > 1"
+            class="rounded-full bg-[var(--lg-orange)] px-2 py-px text-xs font-semibold text-white"
+          >{{ g.count }} 人</span>
+          <span class="ml-auto text-[13px] tabular-nums text-muted-foreground">{{ smart(g.time_end) }}</span>
         </header>
 
-        <!-- 中间：用户（头像 + 大号名字） -->
-        <div class="users">
+        <!-- 中间：用户（头像 + 名字） -->
+        <div class="flex flex-wrap gap-2.5">
           <NuxtLink
             v-for="u in g.users"
             :key="u.uid"
             :to="`/user/${u.uid}`"
-            class="user-card"
+            class="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-accent"
           >
-            <img
-              v-if="u.avatar"
-              :src="u.avatar"
-              alt=""
-              class="avatar"
-              loading="lazy"
-            >
-            <div
-              v-else
-              class="avatar avatar-fallback"
-              :data-color="u.color"
-            >{{ (u.name || '?').charAt(0).toUpperCase() }}</div>
-            <div class="name-wrap">
-              <LuoguUserName :user="u" show-badge no-link />
-            </div>
+            <UserAvatar :user="u" size="lg" />
+            <span class="text-base font-semibold"><LuoguUserName :user="u" show-badge no-link /></span>
           </NuxtLink>
         </div>
 
         <!-- 下部：权限明细 -->
-        <div class="perms">
-          <div v-if="describePermission(g.revoked_permission).length" class="perm-row">
-            <span class="perm-label revoked">● 撤销</span>
-            <span v-for="p in describePermission(g.revoked_permission)" :key="`r-${p}`" class="perm-chip">{{ p }}</span>
-            <span class="perm-suffix">权限</span>
+        <div class="space-y-1 pl-2">
+          <div v-if="describePermission(g.revoked_permission).length" class="flex flex-wrap items-center gap-1.5 text-sm">
+            <span class="font-medium text-[var(--lg-red)]">● 撤销</span>
+            <span
+              v-for="p in describePermission(g.revoked_permission)"
+              :key="`r-${p}`"
+              class="rounded border border-border bg-muted px-2.5 py-0.5 text-[13px]"
+            >{{ p }}</span>
+            <span class="text-[13px] text-muted-foreground">权限</span>
           </div>
-          <div v-if="describePermission(g.added_permission).length" class="perm-row">
-            <span class="perm-label added">● 授予</span>
-            <span v-for="p in describePermission(g.added_permission)" :key="`a-${p}`" class="perm-chip">{{ p }}</span>
-            <span class="perm-suffix">权限</span>
+          <div v-if="describePermission(g.added_permission).length" class="flex flex-wrap items-center gap-1.5 text-sm">
+            <span class="font-medium text-[var(--lg-green)]">● 授予</span>
+            <span
+              v-for="p in describePermission(g.added_permission)"
+              :key="`a-${p}`"
+              class="rounded border border-border bg-muted px-2.5 py-0.5 text-[13px]"
+            >{{ p }}</span>
+            <span class="text-[13px] text-muted-foreground">权限</span>
           </div>
         </div>
 
         <!-- 最底：原因 -->
-        <div class="reason">{{ g.reason }}</div>
+        <p class="border-t border-dashed border-border pt-2.5 text-sm text-foreground">{{ g.reason }}</p>
       </li>
     </ul>
-    <p v-else class="empty">暂无数据</p>
 
-    <div v-if="groups.length" class="loader">
-      <button v-if="!noMore" :disabled="loading" @click="loadMore">
-        {{ loading ? '加载中...' : '加载更多' }}
-      </button>
-      <span v-else class="empty-line">没有更多了</span>
+    <p
+      v-else
+      class="mt-5 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground"
+    >暂无数据</p>
+
+    <!-- 加载更多 -->
+    <div v-if="groups.length" class="mt-5 text-center">
+      <Button v-if="!noMore" variant="outline" :disabled="loading" @click="loadMore">
+        {{ loading ? '加载中…' : '加载更多' }}
+      </Button>
+      <span v-else class="text-sm text-muted-foreground">没有更多了</span>
     </div>
   </div>
 </template>
-
-<style scoped>
-.list {
-  list-style: none;
-  padding: 0;
-}
-.item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 14px;
-  padding: 18px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* 顶部头标 */
-.head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-.action-tag {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 4px;
-}
-.action-tag.revoked {
-  color: var(--lg-red);
-  background: transparent;
-}
-.action-tag.added {
-  color: var(--lg-green);
-  background: transparent;
-}
-.action-tag.cheater {
-  color: var(--lg-cheater-tag);
-  background: transparent;
-}
-.count {
-  background: var(--lg-orange);
-  color: white;
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.time {
-  margin-left: auto;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-/* 用户卡片 */
-.users {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 12px 4px 4px;
-  border-radius: 28px;
-  color: inherit;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-.user-card:hover {
-  background: var(--hover);
-  text-decoration: none;
-}
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--bg);
-  flex-shrink: 0;
-}
-.avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  background: var(--lg-gray);
-}
-.avatar-fallback[data-color="Blue"]    { background: var(--lg-blue); }
-.avatar-fallback[data-color="Green"]   { background: var(--lg-green); }
-.avatar-fallback[data-color="Orange"]  { background: var(--lg-orange); }
-.avatar-fallback[data-color="Red"]     { background: var(--lg-red); }
-.avatar-fallback[data-color="Purple"]  { background: var(--lg-purple); }
-.avatar-fallback[data-color="Cyan"]    { background: var(--lg-cyan); }
-.avatar-fallback[data-color="Black"]   { background: var(--lg-black); }
-.avatar-fallback[data-color="Cheater"] { background: var(--lg-cheater-tag); }
-.name-wrap {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* 权限明细 */
-.perms {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 8px;
-}
-.perm-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 14px;
-}
-.perm-label {
-  font-weight: 500;
-}
-.perm-label.revoked { color: var(--lg-red); }
-.perm-label.added   { color: var(--lg-green); }
-.perm-chip {
-  background: var(--hover);
-  border: 1px solid var(--border);
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.perm-suffix {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-/* 原因 */
-.reason {
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  color: var(--text);
-}
-
-.empty {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 40px;
-}
-
-.loader {
-  text-align: center;
-  padding: 20px;
-}
-.loader button {
-  padding: 8px 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--text);
-  font: inherit;
-}
-.loader button:hover:not(:disabled) {
-  border-color: var(--link);
-  color: var(--link);
-}
-.loader button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.loader .empty-line {
-  color: var(--text-muted);
-}
-</style>
