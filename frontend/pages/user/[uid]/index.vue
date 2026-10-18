@@ -110,7 +110,7 @@ function describePermission(bits: number): string[] {
 }
 
 // 用户页不阻塞首屏：资料回来前先显示加载窗口。
-const { data: profile, error, pending: profilePending } = useLazyAsyncData(`user-${uid}`, () =>
+const { data: profile, error, pending: profilePending, refresh } = useLazyAsyncData(`user-${uid}`, () =>
   api<UserProfile>(`/user/${uid}`),
   { server: false },
 )
@@ -364,10 +364,12 @@ useHead(() => ({ title: profile.value ? `${profile.value.name_hidden ? `UID ${pr
     </div>
   </div>
 
-  <Card v-else-if="error" class="mx-auto max-w-md gap-0 py-10 text-center">
-    <h2 class="text-base font-semibold text-foreground">{{ error.data?.message || '用户未收录' }}</h2>
-    <p class="mt-2 text-sm text-muted-foreground">已触发一次爬取，稍等片刻刷新即可。</p>
-  </Card>
+  <NotArchivedNotice
+    v-else-if="error"
+    :title="error.data?.message || '用户未收录'"
+    description="已触发一次爬取，点击重新加载即可。"
+    @retry="refresh()"
+  />
 
   <div v-else-if="profile" class="space-y-4">
     <Tabs

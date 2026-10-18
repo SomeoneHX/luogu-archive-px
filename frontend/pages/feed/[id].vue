@@ -18,7 +18,7 @@ const { feedHtml } = useFeedContent()
 
 const contentRef = ref<HTMLElement | null>(null)
 
-const { data: feed, pending, error } = useLazyAsyncData(
+const { data: feed, pending, error, refresh } = useLazyAsyncData(
   `feed-${route.params.id}`,
   () => api<FeedItem>(`/feed/${route.params.id}`),
   { server: false },
@@ -40,10 +40,13 @@ useCopyCode(contentRef)
       </div>
     </div>
 
-    <div v-else-if="error" class="rounded-xl border border-dashed border-border p-10 text-center">
-      <p class="text-sm font-medium text-foreground">{{ error.data?.message || '犇犇加载失败' }}</p>
-      <Button variant="outline" size="sm" class="mt-4" @click="navigateTo('/feed')">返回犇犇列表</Button>
-    </div>
+    <NotArchivedNotice
+      v-else-if="error"
+      :title="error.data?.message || '犇犇加载失败'"
+      @retry="refresh()"
+    >
+      <Button variant="ghost" size="sm" @click="navigateTo('/feed')">返回犇犇列表</Button>
+    </NotArchivedNotice>
 
     <article v-else-if="feed" class="flex gap-3 rounded-xl border border-border bg-card p-4 sm:p-5">
       <NuxtLink :to="feed.user ? `/user/${feed.user.uid}` : ''" class="shrink-0" :class="{ 'pointer-events-none': !feed.user }">

@@ -95,14 +95,12 @@ useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '
       </div>
     </div>
 
-    <div v-else-if="error" class="mx-auto max-w-3xl rounded-xl border border-dashed border-border p-10 text-center">
-      <h2 class="text-base font-semibold text-foreground">
-        {{ error.data?.message || '加载失败' }}
-      </h2>
-      <p v-if="error.statusCode === 404" class="mt-2 text-sm leading-relaxed text-muted-foreground">
-        如果本站从未爬取过这篇文章，刚才已触发一次爬取，稍等片刻刷新即可。
-      </p>
-    </div>
+    <NotArchivedNotice
+      v-else-if="error"
+      :title="error.data?.message || '加载失败'"
+      :description="error.statusCode === 404 ? '本站从未爬取过这篇文章，刚才已触发一次爬取，点击重新加载即可。' : null"
+      @retry="refresh()"
+    />
 
     <div v-else-if="data" class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)_220px] lg:gap-8">
       <!-- 历史版本（左侧 sticky，点版本直接切换正文） -->

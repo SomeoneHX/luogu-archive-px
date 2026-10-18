@@ -343,9 +343,11 @@ function userBrief(row: ScoreboardRow) {
       </Card>
     </template>
 
-    <p v-else-if="error" class="mt-5 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-      比赛不存在或尚未完成归档
-    </p>
+    <NotArchivedNotice
+      v-else-if="error"
+      title="比赛不存在或尚未完成归档"
+      @retry="refresh()"
+    />
   </div>
 </template>
 
