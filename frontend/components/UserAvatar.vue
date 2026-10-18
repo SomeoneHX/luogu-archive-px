@@ -45,6 +45,12 @@ const sizeClass = computed(() => SIZES[props.size])
 const background = computed(() => COLORS[props.user?.color || ''] || 'var(--lg-gray)')
 const foreground = computed(() => (props.user?.color === 'Yellow' ? '#333' : '#fff'))
 const initial = computed(() => (props.user?.name || '?').charAt(0).toUpperCase())
+
+const failed = ref(false)
+watch(() => props.user?.avatar, () => { failed.value = false })
+
+// 无头像或加载失败才显示回退；加载中保持透明，避免闪现字母
+const showFallback = computed(() => !props.user?.avatar || failed.value)
 </script>
 
 <template>
@@ -54,11 +60,14 @@ const initial = computed(() => (props.user?.name || '?').charAt(0).toUpperCase()
       :src="user.avatar"
       :alt="user.name"
       loading="lazy"
+      @error="failed = true"
     />
     <AvatarFallback
       class="font-semibold"
       :class="sizeClass.text"
-      :style="{ backgroundColor: background, color: foreground }"
+      :style="showFallback
+        ? { backgroundColor: background, color: foreground }
+        : { backgroundColor: 'transparent', color: 'transparent' }"
     >
       {{ initial }}
     </AvatarFallback>
