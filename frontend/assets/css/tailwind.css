@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "./feed-completion.css";
 
 @custom-variant dark (&:is(.dark *));
 

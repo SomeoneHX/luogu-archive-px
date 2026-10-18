@@ -1,8 +1,14 @@
 // 犇犇正文渲染的唯一实现：Markdown + 回复链自动补回内容的标记。
-// 产出 HTML 里的 feed-completion / feed-auto-merged 结构由各页面 scoped 样式负责呈现。
+// 补回标记的呈现全部用 Tailwind 类写在生成的 HTML 字符串里。
 export function useFeedContent() {
   const { render } = useMarkdown()
   const completionTip = '此内容由洛谷档案馆根据回复链自动补全'
+
+  const WRAP = 'feed-completion-wrap group relative inline cursor-help outline-none'
+  const WRAP_BLOCK = 'feed-completion-wrap feed-completion-block group relative block w-fit max-w-full cursor-help outline-none'
+  const POPOVER = 'feed-completion-popover pointer-events-none absolute bottom-[calc(100%+6px)] left-0 z-20 hidden w-max max-w-[260px] rounded-md border border-border bg-card px-2.5 py-1.5 text-left text-xs leading-normal text-muted-foreground shadow-md group-hover:block group-focus-within:block'
+  const DASHED = 'border-b border-dashed border-border'
+  const DASHED_IMG = '[&_img]:rounded [&_img]:border [&_img]:border-dashed [&_img]:border-border [&_img]:align-middle'
 
   function markMergedMedia(html: string, links: string[], images: string[]) {
     let marked = html
@@ -11,7 +17,7 @@ export function useFeedContent() {
       if (!anchor || !marked.includes(anchor)) continue
       marked = marked.replace(
         anchor,
-        `<span class="feed-completion-wrap" tabindex="0"><span class="feed-auto-merged-link">${anchor}</span><span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`,
+        `<span class="${WRAP}" tabindex="0"><span class="${DASHED}">${anchor}</span><span class="${POPOVER}" role="tooltip">${completionTip}</span></span>`,
       )
     }
     for (const imageMd of images) {
@@ -19,7 +25,7 @@ export function useFeedContent() {
       if (!image || !marked.includes(image)) continue
       marked = marked.replace(
         image,
-        `<span class="feed-completion-wrap feed-auto-merged-image" tabindex="0">${image}<span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`,
+        `<span class="${WRAP} inline-block max-w-full ${DASHED_IMG}" tabindex="0">${image}<span class="${POPOVER}" role="tooltip">${completionTip}</span></span>`,
       )
     }
     return marked
@@ -33,12 +39,12 @@ export function useFeedContent() {
 
     // 普通文字尾巴接回原段落；只有原 Markdown 明确换行或包含多个块时才另起一行。
     if (!mergedSuffix.startsWith('\n') && suffixParagraph && /<\/p>\s*$/.test(prefixHtml)) {
-      const markedSuffix = `<span class="feed-completion-wrap" tabindex="0"><span class="feed-auto-merged">${suffixParagraph[1]}</span><span class="feed-completion-popover" role="tooltip">${completionTip}</span></span>`
+      const markedSuffix = `<span class="${WRAP}" tabindex="0"><span class="${DASHED}">${suffixParagraph[1]}</span><span class="${POPOVER}" role="tooltip">${completionTip}</span></span>`
       return prefixHtml.replace(/<\/p>\s*$/, `${markedSuffix}</p>`)
     }
 
     return prefixHtml
-      + `<div class="feed-completion-wrap feed-completion-block" tabindex="0"><div class="feed-auto-merged">${suffixHtml}</div><span class="feed-completion-popover" role="tooltip">${completionTip}</span></div>`
+      + `<div class="${WRAP_BLOCK} my-1.5" tabindex="0"><div class="${DASHED} [&_img]:max-w-full [&_img]:align-middle">${suffixHtml}</div><span class="${POPOVER}" role="tooltip">${completionTip}</span></div>`
   }
 
   function feedHtml(
