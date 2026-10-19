@@ -31,7 +31,12 @@ const { data, error, pending, refresh } = useLazyAsyncData(`article-${id}`, () =
   { server: false },
 )
 
-const { data: history, pending: historyPending } = useLazyAsyncData(`article-history-${id}`, () =>
+const {
+  data: history,
+  error: historyError,
+  pending: historyPending,
+  refresh: refreshHistory,
+} = useLazyAsyncData(`article-history-${id}`, () =>
   api<{ versions: VersionEntry[] }>(`/article/${id}/history`),
   { server: false },
 )
@@ -47,8 +52,17 @@ function selectVersion(version: VersionEntry) {
   selected.value = version
 }
 
+// 正文接口与版本接口不保证同时成功（首次 404 时两者都失败，重查后正文可能先回来），
+// 优先用选中的版本，版本列表还没回来时退回详情接口自带的正文。
+const activeContent = computed(() => selected.value?.content_md ?? data.value?.content_md ?? '')
+
 const { render } = useMarkdown()
-const html = computed(() => (selected.value ? render(selected.value.content_md) : ''))
+const html = computed(() => render(activeContent.value))
+
+// 重新加载要把两个接口一起重查，否则正文回来了、版本列表还停在失败态。
+async function reload() {
+  await Promise.all([refresh(), refreshHistory()])
+}
 
 const contentRef = ref<HTMLElement | null>(null)
 useCopyCode(contentRef)
@@ -69,10 +83,10 @@ onBeforeUnmount(() => media?.removeEventListener('change', onMediaChange))
 const copied = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 async function copyOriginal() {
-  if (!selected.value) return
+  if (!activeContent.value) return
   clearTimeout(copyTimer)
   try {
-    await navigator.clipboard.writeText(selected.value.content_md)
+    await navigator.clipboard.writeText(activeContent.value)
     copied.value = true
     copyTimer = setTimeout(() => { copied.value = false }, 1600)
   } catch {}
@@ -137,7 +151,7 @@ useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '
       v-else-if="error"
       :title="error.data?.message || '加载失败'"
       :description="error.statusCode === 404 ? '本站从未爬取过这篇文章，刚才已触发一次爬取，点击重新加载即可。' : null"
-      @retry="refresh()"
+      @retry="reload()"
     />
 
     <div v-else-if="data" class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)_220px] lg:gap-8">
@@ -199,6 +213,7 @@ useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '
                 </button>
               </li>
             </ol>
+            <p v-else-if="historyError" class="text-[13px] text-muted-foreground">历史版本加载失败</p>
             <p v-else class="text-[13px] text-muted-foreground">暂无历史版本</p>
           </div>
         </div>
@@ -253,7 +268,7 @@ useHead(() => ({ title: data.value ? `${data.value.title} - 洛谷档案馆` : '
         <ArticleAdminNote :note="data.admin_note" />
 
         <article ref="contentRef" class="lg-content mt-6 [&_h1,&_h2,&_h3,&_h4,&_h5,&_h6]:scroll-mt-6" v-html="html" />
-        <p v-if="!selected?.content_md" class="mt-4 text-[13px] text-muted-foreground">此版本正文为空</p>
+        <p v-if="!activeContent" class="mt-4 text-[13px] text-muted-foreground">此版本正文为空</p>
       </div>
 
       <!-- 目录（右侧 sticky） -->
