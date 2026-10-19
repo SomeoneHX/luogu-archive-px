@@ -82,14 +82,54 @@ useHead(() => ({ title: data.value ? `${data.value.author?.name ?? '未知用户
 
 <template>
   <div class="mx-auto w-full">
-    <div v-if="pending" class="mx-auto max-w-3xl space-y-5 py-2">
-      <Skeleton class="h-7 w-40" />
-      <div class="flex items-center gap-3">
-        <Skeleton class="size-8 rounded-full" />
-        <Skeleton class="h-4 w-32" />
+    <div v-if="pending" class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)_220px] lg:gap-8">
+      <!-- 左：历史版本 -->
+      <aside class="min-w-0 lg:col-start-1 lg:row-span-2">
+        <div class="sticky top-4">
+          <div class="flex items-center gap-2 border-b border-border pb-3">
+            <Skeleton class="size-4 rounded-sm" />
+            <Skeleton class="h-4 w-16" />
+          </div>
+          <div class="space-y-4 pt-4">
+            <div v-for="i in 5" :key="i" class="relative pl-[22px]">
+              <Skeleton class="absolute left-0 top-1 size-3 rounded-full" />
+              <Skeleton class="h-3.5 w-16" />
+              <Skeleton class="mt-1.5 h-3 w-28" />
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 中：标签 + 标题 + meta + 操作 + 正文 -->
+      <div class="min-w-0 lg:col-start-2 lg:row-span-2">
+        <Skeleton class="h-3 w-20" />
+        <div class="mt-3 flex items-center gap-2">
+          <Skeleton class="h-8 w-20" />
+          <Skeleton class="h-7 w-24" />
+        </div>
+        <div class="mt-4 flex items-center gap-3">
+          <Skeleton class="size-8 rounded-full" />
+          <Skeleton class="h-4 w-28" />
+          <Skeleton class="h-3 w-24" />
+        </div>
+        <div class="mt-4 flex items-center gap-2 border-b border-border pb-6">
+          <Skeleton class="h-8 w-24 rounded-md" />
+          <Skeleton class="h-8 w-24 rounded-md" />
+          <Skeleton class="h-8 w-20 rounded-md" />
+        </div>
+        <div class="mt-6 space-y-2.5">
+          <Skeleton v-for="i in 10" :key="i" class="h-4" :class="i % 4 === 0 ? 'w-2/3' : 'w-full'" />
+        </div>
       </div>
-      <div class="space-y-2.5 pt-3">
-        <Skeleton v-for="i in 10" :key="i" class="h-4" :class="i % 4 === 0 ? 'w-2/3' : 'w-full'" />
+
+      <!-- 右：目录 -->
+      <div class="hidden min-w-0 lg:col-start-3 lg:row-span-2 xl:block">
+        <div class="sticky top-4">
+          <Skeleton class="h-4 w-10" />
+          <div class="mt-4 space-y-2.5">
+            <Skeleton v-for="i in 6" :key="i" class="h-3" :class="i % 3 === 0 ? 'w-3/4' : 'w-full'" />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -116,7 +156,13 @@ useHead(() => ({ title: data.value ? `${data.value.author?.name ?? '未知用户
           </button>
 
           <div v-show="historyOpen" class="pt-3">
-            <p v-if="historyPending" class="text-[13px] text-muted-foreground">正在加载版本…</p>
+            <div v-if="historyPending" class="space-y-4">
+              <div v-for="i in 4" :key="i" class="relative pl-[22px]">
+                <Skeleton class="absolute left-0 top-1 size-3 rounded-full" />
+                <Skeleton class="h-3.5 w-16" />
+                <Skeleton class="mt-1.5 h-3 w-28" />
+              </div>
+            </div>
             <ol v-else-if="versions.length">
               <li
                 v-for="(version, index) in versions"
